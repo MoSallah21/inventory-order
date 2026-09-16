@@ -21,6 +21,7 @@
 - Strict order parsing, browser-local cart checkout, and durable customer-scoped idempotency.
 - Atomic mixed-supplier checkout with deterministic locks, immutable snapshots, and exact stock movements.
 - Scoped customer/supplier/admin order DTOs, explicit transitions, and exactly-once cancellation restoration.
+- Database-authoritative admin dashboard with low-stock, seven-day order activity, and delivered revenue aggregates.
 
 ## Verification record
 
@@ -33,7 +34,7 @@ Successful:
 - Offline `prisma migrate diff --from-empty --to-schema ... --script` inspection.
 - TypeScript typecheck.
 - ESLint.
-- 109 unit and PostgreSQL integration tests across 9 files.
+- 115 unit and PostgreSQL integration tests across 10 files.
 - Prettier check.
 - Production build.
 
@@ -56,9 +57,18 @@ Supply-chain and review notes:
 - `pnpm list --depth 0` encountered pnpm's local store-index SQLite access error during the final review; exact resolved
   top-level versions remain recorded in `package.json` and the successfully installed lockfile.
 
+The admin dashboard phase passed Prisma format/validation/migration status, Prettier, TypeScript, all 115 tests, ESLint,
+and the production build. Focused PostgreSQL smoke coverage verified admin success, non-admin denial, filtering, UTC
+order counts, delivered supplier/currency grouping, exact `BIGINT` strings, and exact-ID cleanup.
+
+The dashboard audit added a dedicated `America/New_York` transaction spanning the 2041 DST transition and proved its
+seven keys and counts are identical to the UTC-session result. Boundary fixtures cover the exact lower bound, one
+millisecond before it, both sides of UTC midnight, and the exclusive upper bound. Historical delivered revenue for a
+disabled supplier remains included by policy.
+
 ## Next phase
 
-Implement managed product image upload and lifecycle handling. Dashboard aggregates, pagination, notifications, CSV
+Implement managed product image upload and lifecycle handling. Pagination, notifications, CSV
 export, caching, rate limiting, and deployment remain intentionally deferred.
 
 ## Test isolation
@@ -68,3 +78,6 @@ only the exact records created by that run. Seeded data is never selected for cl
 
 Order tests follow the same exact-ID rule. Explicit-lock coverage uses exact `pg_blocking_pids` relationships, bounded
 polling, and `FOR KEY SHARE` barriers that distinguish the locking selects from later non-key updates.
+
+Dashboard tests also use one randomized exact-ID set and delete only those orders, checkout groups, products,
+categories, and users. They never truncate or alter demo records.

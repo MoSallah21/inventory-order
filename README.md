@@ -13,14 +13,25 @@ Implemented:
 - Server-side actor, disabled-account, and role checks.
 - Minimal sign-in and protected `/admin`, `/supplier`, and `/account` placeholders.
 - Deterministic demo users, categories, and products.
+- Admin dashboard at `/admin` with low-stock, daily-order, and supplier-revenue views.
 - Admin category management at `/admin/categories`.
 - Supplier product management at `/supplier/products`.
 - Server-rendered public catalog at `/products`.
 - Unit and isolated PostgreSQL integration tests.
 - Browser-local cart, atomic multi-supplier checkout, durable idempotency, and role-scoped order history/workflows.
 
-Not implemented yet: product image upload, dashboards, search, pagination, notifications, exports, caching, and rate
+Not implemented yet: product image upload, search, pagination, notifications, exports, caching, and rate
 limiting.
+
+## Admin dashboard definitions
+
+The server-authorized `/admin` dashboard treats stock of 10 units or fewer as low. Its activity table reports the
+latest seven UTC calendar days, including zero-order days, with explicit half-open UTC boundaries that do not depend on
+the PostgreSQL session timezone. All non-cancelled Orders count. Because checkout creates one Order per supplier, a
+mixed-supplier checkout contributes one count for each supplier order. Revenue recognizes only `DELIVERED` order
+totals, uses their immutable minor-unit snapshots, and keeps each supplier/currency pair separate. Delivered historical
+revenue remains visible after a supplier is disabled; disabling affects current catalog access and mutations, not
+already recognized revenue.
 
 ## Product images
 

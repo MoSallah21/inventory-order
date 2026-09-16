@@ -59,9 +59,22 @@ hides that product. Every critical-section query uses the transaction-scoped Pri
 Integration tests create records with a random per-run prefix. Cleanup deletes only exact IDs owned by that run; it
 never truncates tables or deletes seed/application records.
 
+## Admin dashboard module
+
+`src/modules/admin/dashboard.ts` reloads the actor from PostgreSQL before any dashboard data is queried and requires an
+enabled `ADMIN`. One bounded service call returns explicit safe DTOs for all three views. Low stock uses an indexed,
+allow-listed Prisma query; daily activity uses `generate_series` so all seven UTC dates exist; revenue is aggregated by
+PostgreSQL from delivered `Order.totalMinor` snapshots and returned as decimal strings. Caller values are never SQL
+interpolated, currencies are grouped independently, and no raw user/authentication records cross the service boundary.
+
+Daily activity passes a canonical `YYYY-MM-DD` UTC key, generates integer offsets, and performs PostgreSQL `date`
+arithmetic. Both the stored timestamp-without-time-zone value and each half-open day boundary are explicitly interpreted
+as UTC before comparison, so session timezone and daylight-saving transitions cannot change a bucket. Revenue retains
+delivered history for disabled suppliers because account disablement must not erase recognized business history.
+
 ## Deferred architecture
 
-Managed image storage, dashboards, pagination, notifications, exports, caching, and rate limiting remain deferred. The
+Managed image storage, pagination, notifications, exports, caching, and rate limiting remain deferred. The
 temporary image boundary accepts HTTPS URLs and presents no fake upload control.
 
 ## Order module

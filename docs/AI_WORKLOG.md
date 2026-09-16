@@ -64,3 +64,20 @@ No category UI, product CRUD, uploads, cart, checkout, order workflow, dashboard
   satisfy the exact-PID assertion; added bounded barrier acquisition and cleanup settlement.
 - Added focused idempotency, cancellation, actor reload, archived-product, strict FormData/action, recursive DTO, cart,
   currency-authority, and overflow rollback coverage without changing the schema or migration.
+
+## 2026-09-16 — Admin dashboard
+
+- Confirmed a clean synchronized baseline, healthy PostgreSQL, and sufficient unchanged schema before implementation.
+- Added a database-authoritative admin aggregate service with explicit safe DTOs and parameterized PostgreSQL queries.
+- Added low-stock filtering at 10 units, seven UTC activity days with zero filling, and delivered-only revenue grouped
+  independently by supplier and currency with exact decimal-string minor units.
+- Replaced the `/admin` placeholder with responsive tables, navigation, empty states, and a route loading state.
+- Added focused authorization and PostgreSQL aggregate coverage with randomized exact IDs and exact cleanup.
+
+## 2026-09-16 — Confirmed dashboard audit corrections
+
+- Replaced the session-timezone-sensitive `timestamptz` day series with UTC date-key and integer-offset generation.
+- Explicitly interpreted both stored order timestamps and half-open daily boundaries as UTC.
+- Added full threshold, status, boundary, mixed-supplier, disabled-supplier revenue, recursive DTO, and non-UTC DST
+  regression coverage using an isolated future window and transaction-local `America/New_York` setting.
+- Removed raw product IDs from the dashboard presentation while retaining them as safe keys and tie-breakers.

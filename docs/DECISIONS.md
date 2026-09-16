@@ -97,3 +97,16 @@ same quantity; the integer stock column and nonnegative check remain the final d
 
 Cross-table role consistency and other application-only relational invariants remain possible defense-in-depth schema
 work for a separately approved migration; this correction does not change the applied schema.
+
+## ADR-019: Bounded UTC admin aggregates
+
+Define low stock as active products with at most 10 units, excluding archived categories and disabled suppliers. Count
+non-cancelled supplier Orders—not CheckoutGroups—over the current and previous six UTC calendar days, so a
+mixed-supplier checkout counts once per supplier. Recognize revenue only at `DELIVERED`, group by supplier and currency,
+and sum immutable order totals in PostgreSQL. Return aggregate minor units as exact decimal strings and format only in
+the page.
+
+Generate daily keys from a UTC date plus integer offsets rather than adding one-day intervals to `timestamptz` values.
+Interpret both stored order timestamps and half-open boundaries explicitly as UTC, avoiding session-timezone coercion.
+Keep delivered historical revenue visible when a supplier is later disabled; disablement governs current participation,
+not historical recognition.
