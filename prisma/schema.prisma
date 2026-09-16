@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  SUPPLIER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum StockMovementType {
+  ORDER_DECREMENT
+  CANCELLATION_RESTORE
+  MANUAL_ADJUSTMENT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(CUSTOMER)
+  disabledAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions       Session[]
+  accounts       Account[]
+  products       Product[]       @relation("SupplierProducts")
+  customerOrders Order[]         @relation("CustomerOrders")
+  supplierOrders Order[]         @relation("SupplierOrders")
+  checkoutGroups CheckoutGroup[]
+  stockMovements StockMovement[] @relation("StockMovementActor")
+
+  @@index([role, createdAt])
+  @@index([disabledAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+// Better Auth 1.7.5 requires this core adapter table even though this phase
+// deliberately exposes no email-verification or password-reset flow.
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products Product[]
+
+  @@index([archivedAt, name])
+}
+
+model Product {
+  id              String    @id @default(cuid())
+  supplierId      String
+  categoryId      String
+  name            String
+  description     String
+  priceMinor      BigInt
+  currency        String    @default("AED") @db.VarChar(3)
+  stockQuantity   Int
+  imageUrl        String
+  imageStorageKey String
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  supplier       User            @relation("SupplierProducts", fields: [supplierId], references: [id], onDelete: Restrict)
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+
+  @@index([supplierId, archivedAt, createdAt])
+  @@index([categoryId, archivedAt, createdAt])
+  @@index([archivedAt, stockQuantity])
+  @@index([name])
+}
+
+model CheckoutGroup {
+  id             String   @id @default(cuid())
+  customerId     String
+  idempotencyKey String
+  createdAt      DateTime @default(now())
+
+  customer User    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  orders   Order[]
+
+  @@unique([customerId, idempotencyKey])
+  @@index([customerId, createdAt])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  checkoutGroupId String
+  customerId      String
+  supplierId      String
+  status          OrderStatus @default(PENDING)
+  currency        String      @default("AED") @db.VarChar(3)
+  subtotalMinor   BigInt
+  totalMinor      BigInt
+  confirmedAt     DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  checkoutGroup CheckoutGroup @relation(fields: [checkoutGroupId], references: [id], onDelete: Restrict)
+  customer      User          @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Restrict)
+  supplier      User          @relation("SupplierOrders", fields: [supplierId], references: [id], onDelete: Restrict)
+  items         OrderItem[]
+
+  @@index([customerId, createdAt])
+  @@index([supplierId, status, createdAt])
+  @@index([status, createdAt])
+  @@index([checkoutGroupId])
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  orderId             String
+  productId           String?
+  productNameSnapshot String
+  unitPriceMinor      BigInt
+  quantity            Int
+  lineTotalMinor      BigInt
+  createdAt           DateTime @default(now())
+
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  product        Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  stockMovements StockMovement[]
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model StockMovement {
+  id            String            @id @default(cuid())
+  productId     String
+  orderItemId   String?
+  type          StockMovementType
+  quantityDelta Int
+  actorUserId   String?
+  reason        String?
+  createdAt     DateTime          @default(now())
+
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orderItem OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  actor     User?      @relation("StockMovementActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@unique([orderItemId, type])
+  @@index([productId, createdAt])
+  @@index([type, createdAt])
+  @@index([actorUserId])
+}
