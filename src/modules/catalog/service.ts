@@ -328,6 +328,8 @@ function toPublicProduct(
     id: product.id,
     name: product.name,
     description: product.description,
+    priceMinor: product.priceMinor.toString(),
+    currency: product.currency,
     formattedPrice: formatMinorUnits(product.priceMinor, product.currency),
     stockQuantity: product.stockQuantity,
     imageUrl: product.imageUrl,

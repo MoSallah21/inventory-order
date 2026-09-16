@@ -179,6 +179,32 @@ button,
   padding: 0 1.5rem 4rem;
   font-weight: 700;
 }
+.action-row,
+.cart-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.cart-control {
+  min-height: 2.75rem;
+}
+.cart-control span {
+  color: #166534;
+  font-weight: 700;
+}
+.cart-total {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+.order-line {
+  padding: 1rem 0;
+  border-top: 1px solid #e2e8f0;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 @media (max-width: 640px) {
   .form-grid {
     grid-template-columns: 1fr;

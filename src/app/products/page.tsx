@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { AddToCart } from "@/components/add-to-cart";
 import { listPublicProducts } from "@/modules/catalog/service";
 
 export default async function ProductsPage() {
@@ -9,7 +10,11 @@ export default async function ProductsPage() {
     <main className="page-shell">
       <nav className="top-nav">
         <Link href="/">Home</Link>
-        <Link href="/sign-in">Sign in</Link>
+        <span className="action-row">
+          <Link href="/cart">Cart</Link>
+          <Link href="/orders">Orders</Link>
+          <Link href="/sign-in">Sign in</Link>
+        </span>
       </nav>
       <p className="eyebrow">Public catalog</p>
       <h1>Products</h1>
@@ -41,6 +46,10 @@ export default async function ProductsPage() {
                   : "Out of stock"}
               </span>
             </div>
+            <AddToCart
+              disabled={product.stockQuantity === 0}
+              productId={product.id}
+            />
           </article>
         ))}
       </div>

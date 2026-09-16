@@ -46,3 +46,21 @@ No category UI, product CRUD, uploads, cart, checkout, order workflow, dashboard
 - Added deterministic PostgreSQL concurrency tests that observe actual lock waits through database metadata.
 - Added affected-boundary coverage for invalid image URLs, repeat archival, disabled mutation actors, cross-supplier
   transactional denial, and rollback/no-partial-write behavior.
+
+## 2026-09-16 — Transactional order phase
+
+- Confirmed the applied schema supports grouped checkout, durable idempotency, snapshots, and unique movements without
+  a migration.
+- Added strict order parsing, atomic placement, deterministic locks, `BigInt` totals, and conditional stock decrement.
+- Added role-aware transitions, exactly-once cancellation restoration, safe order DTOs, and the minimal cart/order UI.
+- Added unit and PostgreSQL integration coverage for validation, rollback, idempotency, ownership, transitions,
+  cancellation, and exact-PID stock concurrency.
+
+## 2026-09-16 — Confirmed order-flow audit corrections
+
+- Grouped cart totals by database currency without conversion and kept checkout payloads price/currency-free.
+- Added signed PostgreSQL `BIGINT` multiplication and accumulation validation with safe typed errors.
+- Reworked Product and Order lock probes around `FOR KEY SHARE` barriers so only the production locking `SELECT` can
+  satisfy the exact-PID assertion; added bounded barrier acquisition and cleanup settlement.
+- Added focused idempotency, cancellation, actor reload, archived-product, strict FormData/action, recursive DTO, cart,
+  currency-authority, and overflow rollback coverage without changing the schema or migration.

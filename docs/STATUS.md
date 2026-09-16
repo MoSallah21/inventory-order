@@ -18,6 +18,9 @@
 - Supplier-owned product create/edit/archive UI and services.
 - Public product list/detail with safe DTO filtering.
 - PostgreSQL integration coverage for catalog rules and database constraints.
+- Strict order parsing, browser-local cart checkout, and durable customer-scoped idempotency.
+- Atomic mixed-supplier checkout with deterministic locks, immutable snapshots, and exact stock movements.
+- Scoped customer/supplier/admin order DTOs, explicit transitions, and exactly-once cancellation restoration.
 
 ## Verification record
 
@@ -30,9 +33,14 @@ Successful:
 - Offline `prisma migrate diff --from-empty --to-schema ... --script` inspection.
 - TypeScript typecheck.
 - ESLint.
-- 51 unit and PostgreSQL integration tests across 5 files.
+- 109 unit and PostgreSQL integration tests across 9 files.
 - Prettier check.
 - Production build.
+
+For the transactional order phase and focused audit corrections, Prisma format/validation/migration status, Prettier,
+TypeScript, all 109 tests, ESLint, and the webpack production build passed. The default Turbopack build failed only
+because its CSS helper process was denied permission to bind a sandbox port; the required webpack fallback compiled all
+15 routes successfully.
 
 The implementation session previously completed live seed and authentication verification. An independent audit later
 could not reproduce PostgreSQL connectivity in its own execution environment; that was an auditor-environment result,
@@ -50,10 +58,13 @@ Supply-chain and review notes:
 
 ## Next phase
 
-Implement managed product image upload and lifecycle handling. After that, design cart and checkout transactions with
-stock concurrency controls before implementing order workflows.
+Implement managed product image upload and lifecycle handling. Dashboard aggregates, pagination, notifications, CSV
+export, caching, rate limiting, and deployment remain intentionally deferred.
 
 ## Test isolation
 
 Catalog integration tests require the configured PostgreSQL database. Each run uses randomized IDs and cleanup deletes
 only the exact records created by that run. Seeded data is never selected for cleanup.
+
+Order tests follow the same exact-ID rule. Explicit-lock coverage uses exact `pg_blocking_pids` relationships, bounded
+polling, and `FOR KEY SHARE` barriers that distinguish the locking selects from later non-key updates.

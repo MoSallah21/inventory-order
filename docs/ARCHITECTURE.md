@@ -61,6 +61,30 @@ never truncates tables or deletes seed/application records.
 
 ## Deferred architecture
 
-Checkout transactions, stock concurrency control, state transitions, cancellation restoration, managed image storage,
-and dashboards are reserved for later phases. The temporary image boundary accepts HTTPS URLs and presents no fake
-upload control.
+Managed image storage, dashboards, pagination, notifications, exports, caching, and rate limiting remain deferred. The
+temporary image boundary accepts HTTPS URLs and presents no fake upload control.
+
+## Order module
+
+`src/modules/orders` owns raw input parsing, placement, safe DTO reads, and transitions. A checkout accepts at most 50
+distinct products, canonical quantities from 1-10,000, and a 16-100 character opaque key. Duplicate products are
+rejected; identity, supplier, price, total, status, and stock are always database-authoritative.
+
+Placement is one PostgreSQL transaction: lock the customer, resolve idempotency, lock all products in sorted ID order,
+validate availability, then create one checkout group and supplier-specific orders, snapshots, conditional decrements,
+and movements. Mixed-supplier baskets commit or roll back as one unit. Identical key replay returns the existing group;
+a changed payload is rejected.
+
+Cart presentation groups integer minor-unit totals by the currency returned by the public product DTO. It never converts
+or combines currencies, and checkout continues to ignore browser price/currency values. Money multiplication and order
+accumulation reject values above PostgreSQL's signed `BIGINT` maximum (`9223372036854775807`) before persistence.
+
+Transitions lock the order before authorization and policy checks. Supplier/admin advance
+`PENDING → CONFIRMED → SHIPPED → DELIVERED`; customers may cancel pending orders, and supplier/admin may cancel pending
+or confirmed orders. Delivered/cancelled are terminal. Cancellation locks products in sorted ID order and restores
+stock plus compensating movements in the status transaction. Archived products remain eligible for restoration.
+
+Integration regression tests place `FOR KEY SHARE` barriers on the target Product or Order. That mode conflicts with
+the production `SELECT ... FOR UPDATE` but not the later non-key stock/status update, so exact
+`pg_backend_pid()`/`pg_blocking_pids()` correlation proves the explicit pre-validation locks. Barrier acquisition and
+operation settlement use named internal timeouts and immediate rejection handling.

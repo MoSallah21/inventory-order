@@ -1,7 +1,7 @@
 # Inventory & Order Management System
 
-Role-based inventory and order management modular monolith with database-backed authentication, category management,
-supplier-owned product management, and a public catalog.
+Role-based inventory and order management modular monolith with database-backed authentication, catalog management,
+transactional customer checkout, and an authorized order-status workflow.
 
 ## Status
 
@@ -17,9 +17,10 @@ Implemented:
 - Supplier product management at `/supplier/products`.
 - Server-rendered public catalog at `/products`.
 - Unit and isolated PostgreSQL integration tests.
+- Browser-local cart, atomic multi-supplier checkout, durable idempotency, and role-scoped order history/workflows.
 
-Not implemented yet: product image upload, cart, checkout, order transitions, dashboards, search, pagination,
-notifications, exports, caching, and rate limiting.
+Not implemented yet: product image upload, dashboards, search, pagination, notifications, exports, caching, and rate
+limiting.
 
 ## Product images
 
@@ -100,6 +101,12 @@ pnpm dev
 ```
 
 Open `http://localhost:3000/sign-in`. Successful sign-in redirects according to the database-backed role.
+
+Customers use `/products`, `/cart`, and `/orders`. Suppliers and admins use `/orders`; every read and mutation is
+authorized again on the server.
+
+Cart totals are grouped by the product's database currency without conversion. A mixed AED/USD checkout therefore
+shows independent AED and USD totals rather than a misleading combined amount.
 
 ## Verification
 

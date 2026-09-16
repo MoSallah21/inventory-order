@@ -678,6 +678,8 @@ describe("catalog PostgreSQL integration", () => {
       id: created.id,
       supplierName: "Test Supplier A",
       formattedPrice: "AED 42.95",
+      currency: "AED",
+      priceMinor: "4295",
     });
     expect(dto).not.toHaveProperty("supplier");
     expect(dto).not.toHaveProperty("supplierId");

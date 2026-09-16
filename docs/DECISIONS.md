@@ -66,3 +66,34 @@ integers, and values above the business bound. Retain numeric validation in the 
 Use parameterized `SELECT ... FOR UPDATE` helpers inside short interactive PostgreSQL transactions. Create locks the
 category. Update locks the supplier-owned product and then the category. Archive locks the category. This gives the
 active-category decision and product write a transaction boundary without changing the applied migration.
+
+## ADR-014: Transactional supplier-specific checkout
+
+Use `CheckoutGroup` as one atomic customer operation. Mixed-supplier carts split into one order per supplier inside the
+same transaction. Product rows lock in lexical ID order before writes, and all money uses `BigInt` minor units.
+
+## ADR-015: Durable checkout idempotency
+
+Require a 16-100 character opaque key, lock the customer row, and enforce `(customerId, idempotencyKey)`. Identical
+product/quantity replay returns the saved checkout; conflicting reuse returns `DUPLICATE_REQUEST`.
+
+## ADR-016: Explicit transitions and cancellation
+
+Supplier/admin advance `PENDING → CONFIRMED → SHIPPED → DELIVERED`. Customers cancel only pending orders;
+supplier/admin can cancel pending or confirmed orders. Delivered and cancelled are terminal. Cancellation locks the
+order then products in ID order and atomically restores stock, records compensating movements, and changes status.
+
+## ADR-017: Currency-separated cart presentation
+
+Expose each public product's database currency to the cart and group totals by currency without conversion. The cart
+submits only product IDs and quantities; PostgreSQL remains authoritative for currency and price.
+
+## ADR-018: PostgreSQL BIGINT application boundary
+
+Reject multiplication before it exceeds signed PostgreSQL `BIGINT` using division-based detection, and reject
+accumulation before addition. Return a typed validation error and roll back the checkout. Cancellation increments are
+safe under current constraints because each purchased quantity is at most 10,000 and stock was decremented by that
+same quantity; the integer stock column and nonnegative check remain the final database boundary.
+
+Cross-table role consistency and other application-only relational invariants remain possible defense-in-depth schema
+work for a separately approved migration; this correction does not change the applied schema.
