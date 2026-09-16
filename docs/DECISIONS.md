@@ -45,10 +45,34 @@ The deterministic seed refuses to run unless `SEED_DEMO_DATA=true`. All demo cre
 Keep validation, ownership, category availability, archival, and money conversion in `src/modules/catalog`. Server
 actions are transport adapters and reauthorize on every call. Public reads return explicit DTOs.
 
-## ADR-010: Temporary external image URL boundary
+## ADR-010: Managed Cloudinary product images
 
-Until managed uploads exist, require an HTTPS image URL for new and updated products. Do not display a file input or
-claim that the application uploads the image.
+Use an exact-pinned official Cloudinary server SDK behind a server-only `ProductImageStorage` interface. New products
+require validated JPEG/PNG/WebP content up to 5 MiB; filenames and extensions are untrusted. Keep legacy seeded HTTPS
+URLs renderable. Because the existing image columns are non-null, represent explicit removal with empty strings rather
+than changing the applied schema. Delete only generated keys in `inventory-order/product-images/`.
+
+Preserve images during archival. On create/update database failure, attempt deletion of the new upload while preserving
+the original error. After successful replacement/removal, old-object deletion is best effort and a failure produces a
+safe cleanup warning. This explicitly accepts the unavoidable database/external-service atomicity boundary.
+
+Use a 6 MiB framework request envelope for the exact 5 MiB application file maximum. Authenticate before inspecting the
+file. For replacement/removal, snapshot only image URL, storage key, and archive state; after upload, lock Product before
+Category and compare those exact fields. This avoids conflicts for unrelated ordinary edits while safely rejecting
+concurrent image/archive lifecycle changes. Invalid provider responses are compensated and cleanup failure is signaled
+with sanitized server-only metadata.
+
+Treat returned provider identity and URL as evidence, never deletion or persistence authority. Invalid responses delete
+only the generated request key. Persist a canonical unversioned delivery URL derived from the configured cloud name,
+generated key, and normalized format after exact-object evidence validation. Require positive safe-integer dimensions.
+Support genuine baseline/progressive JPEG and still VP8/VP8L/VP8X WebP structures; animated WebP remains outside scope.
+
+For VP8X, enforce the specified feature-bit layout, reject animation by flag or chunk, require supported metadata flags
+and chunks to agree, and require exact canvas/payload equality for the single-image subset. Enforce the strict supported
+order: `VP8X`, optional `ICCP`, optional adjacent `ALPH` before lossy `VP8 `, exactly one VP8/VP8L payload, then optional
+`EXIF`/`XMP ` in either order. VP8L alpha is intrinsic; unknown and duplicate chunks are rejected. Bound the optional Cloudinary
+version syntax to lowercase `v` plus 1–20 decimal digits. Treat all previous-image and ownership FormData fields as
+irrelevant; lifecycle authority comes from the session-backed PostgreSQL actor and locked Product state.
 
 ## ADR-011: Integration cleanup is exact-ID scoped
 

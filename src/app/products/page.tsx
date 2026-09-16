@@ -26,12 +26,18 @@ export default async function ProductsPage() {
           <article className="product-card" key={product.id}>
             <div
               aria-label={`${product.name} product image`}
-              className="product-image"
+              className={`product-image${product.imageUrl ? "" : " product-image-placeholder"}`}
               role="img"
-              style={{
-                backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
-              }}
-            />
+              style={
+                product.imageUrl
+                  ? {
+                      backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
+                    }
+                  : undefined
+              }
+            >
+              {product.imageUrl ? null : "No image"}
+            </div>
             <p className="eyebrow">{product.category.name}</p>
             <h2>
               <Link href={`/products/${product.id}`}>{product.name}</Link>

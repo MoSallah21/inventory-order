@@ -9,6 +9,13 @@ import {
   type Actor,
 } from "@/modules/auth/authorization";
 import { STOCK_MAX } from "@/modules/catalog/stock";
+import {
+  isManagedProductImageKey,
+  productImageStorage,
+  reportImageCleanupFailure,
+  type ProductImageStorage,
+} from "@/modules/catalog/image-storage";
+import type { ValidatedProductImage } from "@/modules/catalog/product-image";
 
 const CATEGORY_NAME_MAX = 80;
 const PRODUCT_NAME_MAX = 120;
@@ -29,6 +36,8 @@ export type ProductInput = {
   stockQuantity: number;
   imageUrl: string;
 };
+
+export type ManagedProductInput = Omit<ProductInput, "imageUrl">;
 
 function requireActorRole(actor: Actor, role: Role) {
   return assertActorRole(assertAuthenticatedActor(actor), [role]);
@@ -122,6 +131,31 @@ function normalizeProductInput(input: ProductInput) {
   };
 }
 
+function normalizeManagedProductInput(input: ManagedProductInput) {
+  const {
+    imageUrl: _imageUrl,
+    imageStorageKey: _imageStorageKey,
+    ...data
+  } = normalizeProductInput({ ...input, imageUrl: "https://managed.invalid" });
+  void _imageUrl;
+  void _imageStorageKey;
+  return data;
+}
+
+async function reloadSupplier(actor: Actor) {
+  const reloaded = await prisma.user.findUnique({
+    where: { id: actor.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      disabledAt: true,
+    },
+  });
+  return requireActorRole(assertAuthenticatedActor(reloaded), Role.SUPPLIER);
+}
+
 function mapDatabaseError(error: unknown): never {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === "P2002") {
@@ -173,14 +207,53 @@ async function requireLockedSupplierProduct(
   supplierId: string,
   productId: string,
 ) {
-  const rows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-    SELECT "id"
+  const rows = await tx.$queryRaw<ProductImageSnapshot[]>(Prisma.sql`
+    SELECT "id", "supplierId", "imageUrl", "imageStorageKey", "archivedAt"
     FROM "Product"
     WHERE "id" = ${productId} AND "supplierId" = ${supplierId}
     FOR UPDATE
   `);
   if (!rows[0]) throw new AppError("NOT_FOUND", "Product not found.");
   return rows[0];
+}
+
+type ProductImageSnapshot = {
+  id: string;
+  supplierId: string;
+  imageUrl: string;
+  imageStorageKey: string;
+  archivedAt: Date | null;
+};
+
+function sameImageState(
+  current: ProductImageSnapshot,
+  snapshot: ProductImageSnapshot,
+) {
+  return (
+    current.imageUrl === snapshot.imageUrl &&
+    current.imageStorageKey === snapshot.imageStorageKey &&
+    current.archivedAt?.getTime() === snapshot.archivedAt?.getTime()
+  );
+}
+
+async function getProductImageSnapshot(supplierId: string, productId: string) {
+  const product = await prisma.product.findFirst({
+    where: { id: productId, supplierId },
+    select: {
+      id: true,
+      supplierId: true,
+      imageUrl: true,
+      imageStorageKey: true,
+      archivedAt: true,
+    },
+  });
+  if (!product) throw new AppError("NOT_FOUND", "Product not found.");
+  return product;
+}
+
+export async function authorizeProductImageMutation(actor: Actor, id: string) {
+  const supplier = await reloadSupplier(actor);
+  await getProductImageSnapshot(supplier.id, id);
 }
 
 export async function listCategories(actor: Actor) {
@@ -294,6 +367,152 @@ export async function updateProduct(
   } catch (error) {
     mapDatabaseError(error);
   }
+}
+
+async function compensateUpload(
+  storage: ProductImageStorage,
+  storageKey: string,
+) {
+  try {
+    await storage.delete(storageKey);
+  } catch (error) {
+    reportImageCleanupFailure("upload-compensation", storageKey, error);
+  }
+}
+
+export async function createProductWithImage(
+  actor: Actor,
+  input: ManagedProductInput,
+  image: ValidatedProductImage,
+  storage: ProductImageStorage = productImageStorage,
+) {
+  const data = normalizeManagedProductInput(input);
+  const supplier = await reloadSupplier(actor);
+  const uploaded = await storage.upload(image);
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await requireLockedActiveCategory(tx, data.categoryId);
+      return tx.product.create({
+        data: {
+          ...data,
+          imageUrl: uploaded.url,
+          imageStorageKey: uploaded.storageKey,
+          currency: "AED",
+          supplierId: supplier.id,
+        },
+      });
+    });
+  } catch (error) {
+    await compensateUpload(storage, uploaded.storageKey);
+    mapDatabaseError(error);
+  }
+}
+
+export async function updateProductWithImage(
+  actor: Actor,
+  id: string,
+  input: ManagedProductInput,
+  image: ValidatedProductImage | null,
+  removeImage: boolean,
+  storage: ProductImageStorage = productImageStorage,
+) {
+  if (image && removeImage) {
+    validationError("image", "Choose either replacement or removal, not both.");
+  }
+  const data = normalizeManagedProductInput(input);
+  const supplier = await reloadSupplier(actor);
+  const snapshot = await getProductImageSnapshot(supplier.id, id);
+
+  const uploaded = image ? await storage.upload(image) : null;
+  try {
+    const product = await prisma.$transaction(async (tx) => {
+      // Product-before-category is the catalog-wide lock order.
+      const current = await requireLockedSupplierProduct(tx, supplier.id, id);
+      if (!sameImageState(current, snapshot)) {
+        throw new AppError(
+          "CONFLICT",
+          "The product image changed. Refresh and try again.",
+        );
+      }
+      await requireLockedActiveCategory(tx, data.categoryId);
+      return tx.product.update({
+        where: { id },
+        data: {
+          ...data,
+          ...(uploaded
+            ? {
+                imageUrl: uploaded.url,
+                imageStorageKey: uploaded.storageKey,
+              }
+            : removeImage
+              ? { imageUrl: "", imageStorageKey: "" }
+              : {}),
+        },
+      });
+    });
+
+    let cleanupWarning = false;
+    if (
+      (uploaded || removeImage) &&
+      isManagedProductImageKey(snapshot.imageStorageKey)
+    ) {
+      try {
+        await storage.delete(snapshot.imageStorageKey);
+      } catch (error) {
+        reportImageCleanupFailure(
+          "replaced-image-cleanup",
+          snapshot.imageStorageKey,
+          error,
+        );
+        cleanupWarning = true;
+      }
+    }
+    return { product, cleanupWarning };
+  } catch (error) {
+    if (uploaded) await compensateUpload(storage, uploaded.storageKey);
+    mapDatabaseError(error);
+  }
+}
+
+export async function removeProductImage(
+  actor: Actor,
+  id: string,
+  storage: ProductImageStorage = productImageStorage,
+  hooks?: { afterSnapshot?: () => Promise<void> },
+) {
+  const supplier = await reloadSupplier(actor);
+  const snapshot = await getProductImageSnapshot(supplier.id, id);
+  await hooks?.afterSnapshot?.();
+
+  const cleared = await prisma.$transaction(async (tx) => {
+    const current = await requireLockedSupplierProduct(tx, supplier.id, id);
+    if (!sameImageState(current, snapshot)) {
+      throw new AppError(
+        "CONFLICT",
+        "The product image changed. Refresh and try again.",
+      );
+    }
+    if (!current.imageUrl && !current.imageStorageKey) return current;
+    await tx.product.update({
+      where: { id },
+      data: { imageUrl: "", imageStorageKey: "" },
+    });
+    return current;
+  });
+  if (isManagedProductImageKey(cleared.imageStorageKey)) {
+    try {
+      await storage.delete(cleared.imageStorageKey);
+      return { cleanupWarning: false };
+    } catch (error) {
+      reportImageCleanupFailure(
+        "removed-image-cleanup",
+        cleared.imageStorageKey,
+        error,
+      );
+      return { cleanupWarning: true };
+    }
+  }
+  return { cleanupWarning: false };
 }
 
 export async function archiveProduct(actor: Actor, id: string) {

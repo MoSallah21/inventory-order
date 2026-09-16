@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { AppError, serializeError } from "@/lib/errors";
 
 describe("serializeError", () => {
-  it("preserves safe expected errors", () => {
+  it("prefers a safe field-specific message for expected errors", () => {
     expect(
       serializeError(
         new AppError("VALIDATION_FAILED", "Invalid input.", {
@@ -12,7 +12,7 @@ describe("serializeError", () => {
       ),
     ).toEqual({
       code: "VALIDATION_FAILED",
-      message: "Invalid input.",
+      message: "Required",
       fieldErrors: { name: ["Required"] },
     });
   });

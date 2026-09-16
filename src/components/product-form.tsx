@@ -1,4 +1,28 @@
+"use client";
+
 import type { Category, Product } from "@/generated/prisma/client";
+import { useState } from "react";
+import { useFormStatus } from "react-dom";
+
+export function productImageInputName(
+  editing: boolean,
+  selectedFileCount: number,
+) {
+  return !editing || selectedFileCount > 0 ? "image" : undefined;
+}
+
+export function hasProductImageMutationConflict(data: FormData) {
+  return data.get("removeImage") === "on" && data.has("image");
+}
+
+function SubmitButton({ editing }: { editing: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button disabled={pending} type="submit">
+      {pending ? "Uploading…" : editing ? "Save product" : "Create product"}
+    </button>
+  );
+}
 
 type Props = {
   action: (formData: FormData) => void | Promise<void>;
@@ -16,11 +40,23 @@ type Props = {
 };
 
 export function ProductForm({ action, categories, product }: Props) {
+  const [selectedFileCount, setSelectedFileCount] = useState(0);
+  const editing = Boolean(product);
   const price = product
     ? `${product.priceMinor / 100n}.${(product.priceMinor % 100n).toString().padStart(2, "0")}`
     : "";
   return (
-    <form action={action} className="form-grid">
+    <form
+      action={action}
+      className="form-grid"
+      onSubmit={(event) => {
+        const data = new FormData(event.currentTarget);
+        if (hasProductImageMutationConflict(data)) {
+          event.preventDefault();
+          window.alert("Choose either a replacement image or Remove image.");
+        }
+      }}
+    >
       {product ? <input name="id" type="hidden" value={product.id} /> : null}
       <label>
         Name
@@ -64,20 +100,43 @@ export function ProductForm({ action, categories, product }: Props) {
           type="number"
         />
       </label>
+      {product ? (
+        product.imageUrl ? (
+          <div
+            aria-label={`${product.name} current product image`}
+            className="product-form-preview full"
+            role="img"
+            style={{
+              backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
+            }}
+          />
+        ) : (
+          <div className="product-image product-image-placeholder full">
+            No image
+          </div>
+        )
+      ) : null}
       <label className="full">
-        HTTPS image URL
+        {product ? "Replace image (optional)" : "Product image"}
         <input
-          defaultValue={product?.imageUrl}
-          name="imageUrl"
-          placeholder="https://…"
-          required
-          type="url"
+          accept="image/jpeg,image/png,image/webp"
+          name={productImageInputName(editing, selectedFileCount)}
+          onChange={(event) => {
+            setSelectedFileCount(event.currentTarget.files?.length ?? 0);
+          }}
+          required={!product}
+          type="file"
         />
       </label>
       <p className="hint full">
-        Temporary image boundary: provide an HTTPS URL. Upload support is
-        intentionally deferred.
+        JPEG, PNG, or WebP. Maximum 5 MiB. File content is checked on the
+        server.
       </p>
+      {product ? (
+        <label className="checkbox-row full">
+          <input name="removeImage" type="checkbox" /> Remove current image
+        </label>
+      ) : null}
       <label className="full">
         Description
         <textarea
@@ -88,9 +147,7 @@ export function ProductForm({ action, categories, product }: Props) {
           rows={6}
         />
       </label>
-      <button type="submit">
-        {product ? "Save product" : "Create product"}
-      </button>
+      <SubmitButton editing={editing} />
     </form>
   );
 }

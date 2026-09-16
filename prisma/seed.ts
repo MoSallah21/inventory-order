@@ -152,12 +152,17 @@ async function main() {
   for (const product of products) {
     await prisma.product.upsert({
       where: { id: product.id },
-      update: { ...product, archivedAt: null },
+      update: {
+        ...product,
+        archivedAt: null,
+        imageUrl: "/window.svg",
+        imageStorageKey: "",
+      },
       create: {
         ...product,
         currency: "AED",
         imageUrl: "/window.svg",
-        imageStorageKey: `seed/${product.id}.svg`,
+        imageStorageKey: "",
       },
     });
   }

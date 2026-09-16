@@ -7,6 +7,8 @@ export const appErrorCodes = [
   "INSUFFICIENT_STOCK",
   "INVALID_STATUS_TRANSITION",
   "DUPLICATE_REQUEST",
+  "CONFIGURATION_ERROR",
+  "EXTERNAL_SERVICE_ERROR",
   "INTERNAL_ERROR",
 ] as const;
 
@@ -31,9 +33,14 @@ export class AppError extends Error {
 
 export function serializeError(error: unknown): BrowserError {
   if (error instanceof AppError) {
+    const fieldMessage = error.fieldErrors
+      ? Object.values(error.fieldErrors)
+          .flat()
+          .find((message) => typeof message === "string" && message.length > 0)
+      : undefined;
     return {
       code: error.code,
-      message: error.message,
+      message: fieldMessage ?? error.message,
       ...(error.fieldErrors ? { fieldErrors: error.fieldErrors } : {}),
     };
   }

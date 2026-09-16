@@ -156,6 +156,35 @@ button,
   border-radius: 0.7rem;
   background: #e2e8f0;
 }
+
+.product-image-placeholder {
+  align-items: center;
+  background: #eef1f4;
+  color: #5b6470;
+  display: flex;
+  justify-content: center;
+}
+
+.product-form-preview {
+  aspect-ratio: 16 / 9;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  border-radius: 0.75rem;
+  max-height: 22rem;
+  width: 100%;
+}
+
+.checkbox-row {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 0.5rem;
+}
+
+.checkbox-row input {
+  width: auto;
+}
 .product-card p {
   color: #475569;
   line-height: 1.6;

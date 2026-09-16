@@ -22,6 +22,7 @@
 - Atomic mixed-supplier checkout with deterministic locks, immutable snapshots, and exact stock movements.
 - Scoped customer/supplier/admin order DTOs, explicit transitions, and exactly-once cancellation restoration.
 - Database-authoritative admin dashboard with low-stock, seven-day order activity, and delivered revenue aggregates.
+- Managed Cloudinary supplier product upload, replacement, removal, compensation, and retained-on-archive lifecycle.
 
 ## Verification record
 
@@ -66,10 +67,41 @@ seven keys and counts are identical to the UTC-session result. Boundary fixtures
 millisecond before it, both sides of UTC midnight, and the exclusive upper bound. Historical delivered revenue for a
 disabled supplier remains included by policy.
 
-## Next phase
+## Managed-image verification note
 
-Implement managed product image upload and lifecycle handling. Pagination, notifications, CSV
-export, caching, rate limiting, and deployment remain intentionally deferred.
+Automated validation and lifecycle tests use a fake storage provider and never contact Cloudinary. A real local,
+credentialed Cloudinary smoke test was completed successfully: one genuine PNG was uploaded, persisted, and rendered
+by the application. The smoke Product was removed and its managed Cloudinary object was deleted afterward. No
+credential or upload artifact entered Git. A deployment-environment smoke test remains pending until deployment.
+Pagination, notifications, CSV export, caching, rate limiting, and deployment remain intentionally deferred.
+
+The managed-image phase plus confirmed audit corrections passed Prisma format/validation/migration status, Prettier,
+TypeScript, all 328 tests across 17 files, ESLint,
+and the webpack production build. The default Turbopack build failed only because its CSS helper process was denied
+permission to bind a sandbox port. The applied migration and schema content remained unchanged.
+
+Audit coverage includes the 6 MiB Server Action envelope versus exact 5 MiB application limit; independently decoded
+genuine baseline/progressive JPEG, PNG, VP8, VP8L, and VP8X fixtures; exact-object canonical URL behavior; mandatory
+provider dimensions; and expected-key-only compensation. Database-backed action tests mock only session transport and
+Cloudinary. Deterministic races cover replacement/replacement, both replacement/removal directions, and both
+replacement/archive directions with bounded failure-safe helpers. Cleanup failures emit a sanitized server-side signal.
+Automated tests did not contact real Cloudinary.
+
+Demo seed products now keep `/window.svg` as legacy local image metadata and
+use the schema's empty-string sentinel for “no managed Cloudinary key.” The
+upsert corrects existing demo rows as well as new seeds, so reseeding remains
+idempotent and legacy images are never submitted to managed-image deletion.
+The final local browser smoke test also confirmed an edit with no selected file,
+native create-without-file feedback, and one successful real PNG upload; the
+exact smoke product and managed object were removed afterward.
+
+Final audit coverage additionally rejects VP8X animation through both feature flags and `ANIM`/`ANMF` chunks, checks
+reserved bits and supported metadata flags, and requires exact canvas/payload dimensions for the supported single-still
+subset. Cloudinary versions are limited to lowercase `v` plus 1–20 decimal digits. URL tests cover raw/encoded/double-
+encoded separators, backslashes, suffixes, extra extensions/paths, malformed versions, transformations, query,
+fragment, credentials, and ports. Cross-owner replacement and removal are separate PostgreSQL-backed action cases;
+owner-path injection proves previous metadata remains database-trusted. Every production race await has its own named
+internal timeout in addition to failure-safe final settlement.
 
 ## Test isolation
 

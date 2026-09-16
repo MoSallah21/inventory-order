@@ -20,8 +20,7 @@ Implemented:
 - Unit and isolated PostgreSQL integration tests.
 - Browser-local cart, atomic multi-supplier checkout, durable idempotency, and role-scoped order history/workflows.
 
-Not implemented yet: product image upload, search, pagination, notifications, exports, caching, and rate
-limiting.
+Not implemented yet: search, pagination, notifications, exports, caching, and rate limiting.
 
 ## Admin dashboard definitions
 
@@ -35,8 +34,32 @@ already recognized revenue.
 
 ## Product images
 
-Product creation currently accepts a validated HTTPS image URL. This is an explicit temporary boundary: there is no
-file picker and no implied upload. Managed image upload is reserved for the next dedicated phase.
+New supplier products require a JPEG, PNG, or WebP upload of at most 5 MiB. The server checks MIME type and magic bytes,
+then performs bounded structural validation before storing the image through the server-only Cloudinary adapter. This
+rejects truncated container/header structures but is not full image decoding. Next.js permits a 6 MiB Server Action
+multipart envelope so a 5 MiB file plus normal form overhead can reach the exact application limit. Edit supports keep,
+replace, and remove. Seeded legacy
+HTTPS URLs continue to render; they have no managed deletion lifecycle. Product archival preserves image metadata and
+the Cloudinary object for audit/history.
+
+Concurrent image changes use a trusted pre-upload snapshot and a transactional row-lock comparison. A stale operation
+returns a conflict and users can refresh and retry; losing replacement uploads are compensated without deleting the
+winning image.
+
+Supported structures include baseline and progressive/multi-scan JPEG, PNG, and still-image WebP using `VP8 `, `VP8L`,
+or `VP8X` with a real image payload. Animated WebP is intentionally rejected. Cloudinary evidence URLs must identify
+the exact generated object; the application persists its own canonical URL from trusted cloud name, generated key, and
+validated format. Invalid provider responses compensate only that generated key—never an unrelated returned key.
+
+For the supported extended still-WebP subset, VP8X reserved and animation bits must be clear, metadata flags must agree
+with supported chunks, and the canvas must exactly match the single VP8/VP8L payload. `VP8X` is first; optional `ICCP`
+precedes reconstructive data; lossy `ALPH` is immediately before `VP8 `; and optional `EXIF`/`XMP ` follow the image in
+either order. `VP8L` uses only its intrinsic alpha bit. Unknown chunks, `ANIM`, and `ANMF` are rejected by this strict
+subset. Cloudinary evidence permits either no version or one lowercase `v` segment containing 1–20 decimal digits.
+
+Production requires `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Keep the secret
+server-only. Missing values do not break builds or read-only pages, but upload/deletion returns a safe configuration
+error. Tests use a fake provider and never contact Cloudinary.
 
 ## Requirements
 
@@ -52,7 +75,7 @@ cp .env.example .env
 ```
 
 Set a real local `DATABASE_URL` and generate a random `BETTER_AUTH_SECRET` of at least 32 characters. Never commit
-`.env`.
+`.env`. Add the three Cloudinary values before testing real uploads.
 
 ### Local PostgreSQL
 

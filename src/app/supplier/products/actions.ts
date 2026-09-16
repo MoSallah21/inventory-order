@@ -8,9 +8,11 @@ import { serializeError } from "@/lib/errors";
 import { requireRole } from "@/modules/auth/authorization";
 import {
   archiveProduct,
-  createProduct,
-  updateProduct,
+  authorizeProductImageMutation,
+  createProductWithImage,
+  updateProductWithImage,
 } from "@/modules/catalog/service";
+import { validateProductImage } from "@/modules/catalog/product-image";
 import { parseRawStockQuantity } from "@/modules/catalog/stock";
 
 function input(formData: FormData) {
@@ -20,14 +22,14 @@ function input(formData: FormData) {
     categoryId: String(formData.get("categoryId") ?? ""),
     price: String(formData.get("price") ?? ""),
     stockQuantity: parseRawStockQuantity(formData.get("stockQuantity")),
-    imageUrl: String(formData.get("imageUrl") ?? ""),
   };
 }
 
-function outcome(path: string, error?: unknown) {
+function outcome(path: string, error?: unknown, warning?: boolean) {
   const query = new URLSearchParams();
   if (error) query.set("error", serializeError(error).message);
   else query.set("saved", "1");
+  if (warning) query.set("warning", "image-cleanup");
   return `${path}?${query}`;
 }
 
@@ -38,7 +40,11 @@ function revalidateCatalog() {
 
 export async function createProductAction(formData: FormData) {
   try {
-    await createProduct(await requireRole(Role.SUPPLIER), input(formData));
+    const actor = await requireRole(Role.SUPPLIER);
+    const fields = input(formData);
+    const image = await validateProductImage(formData.get("image"), true);
+    if (!image) throw new Error("Required image was not validated.");
+    await createProductWithImage(actor, fields, image);
   } catch (error) {
     redirect(outcome("/supplier/products/new", error));
   }
@@ -48,8 +54,21 @@ export async function createProductAction(formData: FormData) {
 
 export async function updateProductAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
+  let cleanupWarning = false;
   try {
-    await updateProduct(await requireRole(Role.SUPPLIER), id, input(formData));
+    const actor = await requireRole(Role.SUPPLIER);
+    await authorizeProductImageMutation(actor, id);
+    const fields = input(formData);
+    const image = await validateProductImage(formData.get("image"), false);
+    const removeImage = formData.get("removeImage") === "on";
+    const result = await updateProductWithImage(
+      actor,
+      id,
+      fields,
+      image,
+      removeImage,
+    );
+    cleanupWarning = result.cleanupWarning;
   } catch (error) {
     redirect(
       outcome(`/supplier/products/${encodeURIComponent(id)}/edit`, error),
@@ -57,7 +76,7 @@ export async function updateProductAction(formData: FormData) {
   }
   revalidateCatalog();
   revalidatePath(`/products/${id}`);
-  redirect(outcome("/supplier/products"));
+  redirect(outcome("/supplier/products", undefined, cleanupWarning));
 }
 
 export async function archiveProductAction(formData: FormData) {
