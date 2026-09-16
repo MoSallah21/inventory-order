@@ -41,6 +41,52 @@ a {
 .top-nav {
   margin-bottom: 4rem;
 }
+.authenticated-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 4rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+.authenticated-header nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.identity,
+.sign-out-control {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.sign-out-control {
+  position: relative;
+}
+.sign-out-error {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  width: max-content;
+  max-width: 16rem;
+  color: #991b1b;
+  font-size: 0.8rem;
+}
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+.portal-card {
+  color: inherit;
+  text-decoration: none;
+}
+.portal-card p {
+  color: #475569;
+  line-height: 1.6;
+}
 .eyebrow {
   color: #64748b;
   font-size: 0.75rem;
@@ -297,5 +343,16 @@ button:disabled {
   }
   .top-nav {
     align-items: flex-start;
+  }
+  .authenticated-header {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+  .authenticated-header nav {
+    justify-content: flex-start;
+  }
+  .sign-out-error {
+    right: auto;
+    left: 0;
   }
 }

@@ -11,7 +11,8 @@
 - Server-side actor and role helpers.
 - Typed application errors and safe serialization.
 - Deterministic guarded seed and documented demo accounts.
-- Minimal sign-in and three protected role placeholders.
+- Role-aware authenticated navigation, useful supplier/customer homes, and Better Auth sign-out.
+- Safe anonymous, disabled-account, and wrong-role page redirects.
 - Targeted foundation tests.
 - Live migration, seed, constraint, relation, and authentication verification.
 - Admin category create/edit/archive UI and services.
@@ -38,6 +39,33 @@ Successful:
 - 115 unit and PostgreSQL integration tests across 10 files.
 - Prettier check.
 - Production build.
+
+The authenticated-navigation phase adds 20 focused passing assertions for role links and route existence, Better Auth
+sign-out success/failure/repeated-click behavior, enabled and disabled sign-in redirects, protected-page redirect
+policy, invalidated-session actor resolution, dynamic actor checks, and removal of placeholder copy. The complete suite
+passes all 348 tests across 22 files with existing demo orders preserved. The canonical seeded product stock is
+`0 / 3 / 120`; the current local post-smoke state is `0 / 2 / 119` because preserved demo orders consumed stock.
+
+The authenticated role-switch smoke was performed manually through the real browser and application. The verified
+local sequence was:
+
+1. Signed in as Supplier.
+2. Opened Supplier products and orders.
+3. Signed out using the production Better Auth `SignOutButton`.
+4. Refreshed/reopened a former Supplier protected URL and was redirected to `/sign-in`.
+5. Signed in as Admin in the same browser.
+6. Opened the Admin dashboard, categories, and orders.
+7. Signed out.
+8. Signed in as Customer.
+9. Opened products, cart, and customer orders.
+10. Signed out.
+11. Opened `/orders` anonymously and was redirected to `/sign-in` rather than receiving HTTP 500.
+
+The previous server session was unusable after each sign-out, and protected pages remained server-authorized and
+dynamic. Component-level browser automation for this flow is not included; this is an accepted assessment-scope
+testing boundary, not a claim of automated E2E coverage. The full automated suite remains 348/348 across 22 files.
+Canonical seeded stock remains `0 / 3 / 120`, while current local stock remains `0 / 2 / 119` because preserved manual
+demo orders consumed stock.
 
 For the transactional order phase and focused audit corrections, Prisma format/validation/migration status, Prettier,
 TypeScript, all 109 tests, ESLint, and the webpack production build passed. The default Turbopack build failed only

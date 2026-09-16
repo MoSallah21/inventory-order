@@ -1,8 +1,9 @@
 import Link from "next/link";
 
+import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
 import { Role } from "@/generated/prisma/enums";
 import { formatMinorUnits } from "@/lib/money";
-import { requireRole } from "@/modules/auth/authorization";
+import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { listSupplierProducts } from "@/modules/catalog/service";
 
 import { archiveProductAction } from "./actions";
@@ -12,17 +13,14 @@ type Props = {
 };
 
 export default async function SupplierProductsPage({ searchParams }: Props) {
-  const actor = await requireRole(Role.SUPPLIER);
+  const actor = await requireProtectedPage(Role.SUPPLIER);
   const [products, query] = await Promise.all([
     listSupplierProducts(actor),
     searchParams,
   ]);
   return (
     <main className="page-shell">
-      <nav className="top-nav">
-        <Link href="/supplier">Supplier home</Link>
-        <Link href="/products">Public catalog</Link>
-      </nav>
+      <AuthenticatedNavigation actor={actor} />
       <div className="row">
         <div>
           <p className="eyebrow">Supplier catalog</p>

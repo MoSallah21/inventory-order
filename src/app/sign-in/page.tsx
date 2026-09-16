@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 
 import { getCurrentActor } from "@/modules/auth/authorization";
+import { enabledActorHome } from "@/modules/auth/navigation";
 import { SignInForm } from "@/app/sign-in/sign-in-form";
 
 export default async function SignInPage() {
-  if (await getCurrentActor()) {
-    redirect("/auth/redirect");
-  }
+  const actor = await getCurrentActor();
+  const destination = enabledActorHome(actor);
+  if (destination) redirect(destination);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">

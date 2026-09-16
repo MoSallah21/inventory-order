@@ -1,7 +1,7 @@
-import Link from "next/link";
-
 import { transitionOrderAction } from "@/app/orders/actions";
-import { requireAuthenticatedActor } from "@/modules/auth/authorization";
+import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
+import { Role } from "@/generated/prisma/enums";
+import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { allowedTargets, getOrder } from "@/modules/orders/service";
 
 export default async function OrderPage({
@@ -13,15 +13,16 @@ export default async function OrderPage({
 }) {
   const { orderId } = await params;
   const query = await searchParams;
-  const actor = await requireAuthenticatedActor();
+  const actor = await requireProtectedPage(
+    Role.ADMIN,
+    Role.SUPPLIER,
+    Role.CUSTOMER,
+  );
   const order = await getOrder(actor, orderId);
   const targets = allowedTargets(actor.role, order.status);
   return (
     <main className="page-shell narrow">
-      <nav className="top-nav">
-        <Link href="/orders">All orders</Link>
-        <Link href="/products">Products</Link>
-      </nav>
+      <AuthenticatedNavigation actor={actor} />
       <p className="eyebrow">Order detail</p>
       <h1>Order {order.id.slice(-8)}</h1>
       {query.error ? <p className="notice error">{query.error}</p> : null}

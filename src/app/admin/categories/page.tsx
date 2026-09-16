@@ -1,7 +1,6 @@
-import Link from "next/link";
-
+import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
 import { Role } from "@/generated/prisma/enums";
-import { requireRole } from "@/modules/auth/authorization";
+import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { listCategories } from "@/modules/catalog/service";
 
 import {
@@ -13,7 +12,7 @@ import {
 type Props = { searchParams: Promise<{ error?: string; saved?: string }> };
 
 export default async function CategoriesPage({ searchParams }: Props) {
-  const actor = await requireRole(Role.ADMIN);
+  const actor = await requireProtectedPage(Role.ADMIN);
   const [categories, query] = await Promise.all([
     listCategories(actor),
     searchParams,
@@ -21,10 +20,7 @@ export default async function CategoriesPage({ searchParams }: Props) {
 
   return (
     <main className="page-shell">
-      <nav className="top-nav">
-        <Link href="/admin">Admin</Link>
-        <Link href="/products">Public catalog</Link>
-      </nav>
+      <AuthenticatedNavigation actor={actor} />
       <p className="eyebrow">Admin catalog</p>
       <h1>Categories</h1>
       <p className="lede">

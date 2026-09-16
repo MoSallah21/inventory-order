@@ -11,7 +11,8 @@ Implemented:
 - PostgreSQL schema and initial Prisma migration.
 - Better Auth email/password credentials with database-backed sessions.
 - Server-side actor, disabled-account, and role checks.
-- Minimal sign-in and protected `/admin`, `/supplier`, and `/account` placeholders.
+- Role-aware authenticated navigation and protected `/admin`, `/supplier`, and `/account` homes.
+- Better Auth server-session sign-out with safe sign-in and protected-page redirects.
 - Deterministic demo users, categories, and products.
 - Admin dashboard at `/admin` with low-stock, daily-order, and supplier-revenue views.
 - Admin category management at `/admin/categories`.

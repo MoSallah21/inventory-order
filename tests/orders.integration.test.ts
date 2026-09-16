@@ -1070,7 +1070,17 @@ describe("transactional orders", () => {
     expect(await listOrders(customerA)).toHaveLength(2);
     expect(await listOrders(customerB)).toHaveLength(0);
     expect(await listOrders(supplierA)).toHaveLength(1);
-    expect(await listOrders(admin)).toHaveLength(2);
+    const adminOrders = (await listOrders(admin)).filter(
+      (order) => order.checkoutGroupId === placed.checkoutGroupId,
+    );
+    expect(adminOrders).toHaveLength(2);
+    expect(adminOrders.map((order) => order.customer.id)).toEqual([
+      ids.customerA,
+      ids.customerA,
+    ]);
+    expect(adminOrders.map((order) => order.supplier.id).sort()).toEqual(
+      [ids.supplierA, ids.supplierB].sort(),
+    );
     const order = await prisma.order.findFirstOrThrow({
       where: {
         checkoutGroupId: placed.checkoutGroupId,

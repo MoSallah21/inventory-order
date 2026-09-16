@@ -1,16 +1,14 @@
 import { redirect } from "next/navigation";
 
 import { Role } from "@/generated/prisma/enums";
-import { requireAuthenticatedActor } from "@/modules/auth/authorization";
+import { requireProtectedPage } from "@/modules/auth/page-authorization";
+import { roleHome } from "@/modules/auth/navigation";
 
 export default async function RoleRedirectPage() {
-  const actor = await requireAuthenticatedActor();
-
-  const destination: Record<Role, string> = {
-    [Role.ADMIN]: "/admin",
-    [Role.SUPPLIER]: "/supplier",
-    [Role.CUSTOMER]: "/account",
-  };
-
-  redirect(destination[actor.role]);
+  const actor = await requireProtectedPage(
+    Role.ADMIN,
+    Role.SUPPLIER,
+    Role.CUSTOMER,
+  );
+  redirect(roleHome(actor.role));
 }

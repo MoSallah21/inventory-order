@@ -139,3 +139,33 @@ No category UI, product CRUD, uploads, cart, checkout, order workflow, dashboard
   the underlying service error code without revealing ownership.
 - Added absent, undefined, null, empty, whitespace-only, and non-string `secure_url` cases through the production adapter
   and database-backed action path, with expected-key-only compensation and no persistence.
+
+## 2026-09-17 — Authenticated navigation and sign-out
+
+- Added a shared role-aware header with the signed-in identity, verified existing route links, and an accessible Better
+  Auth sign-out control with pending, duplicate-click, safe-failure, history-replacement, and refresh behavior.
+- Replaced supplier and customer placeholders with useful role shortcuts and integrated the header into admin,
+  categories, supplier product management, and role-scoped order pages.
+- Converted anonymous, disabled, and wrong-role page failures into deterministic redirects while retaining service and
+  Server Action authorization and database-authoritative actor role/disabled-state resolution.
+- Added 20 focused assertions across five files and corrected the admin order-list integration assertion to select only
+  its randomized checkout group. All 348 tests across 22 files pass with unrelated demo orders preserved.
+- Recorded canonical seeded stock as `0 / 3 / 120` and the current local post-smoke state as `0 / 2 / 119`; the
+  preserved demo orders account for the difference.
+- Performed the authenticated role-switch smoke manually through the real browser and application:
+  1. Signed in as Supplier.
+  2. Opened Supplier products and orders.
+  3. Signed out using the production Better Auth `SignOutButton`.
+  4. Refreshed/reopened a former Supplier protected URL and was redirected to `/sign-in`.
+  5. Signed in as Admin in the same browser.
+  6. Opened the Admin dashboard, categories, and orders.
+  7. Signed out.
+  8. Signed in as Customer.
+  9. Opened products, cart, and customer orders.
+  10. Signed out.
+  11. Opened `/orders` anonymously and was redirected to `/sign-in` rather than receiving HTTP 500.
+- The previous server session was unusable after each sign-out, and protected pages remained server-authorized and
+  dynamic. Component-level browser automation for this flow is not included; this is an accepted assessment-scope
+  testing boundary, not a claim of automated E2E coverage.
+- The full automated suite remains 348/348 across 22 files. Canonical seeded stock remains `0 / 3 / 120`; current local
+  stock remains `0 / 2 / 119` because preserved manual demo orders consumed stock.

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
 import { ProductForm } from "@/components/product-form";
 import { Role } from "@/generated/prisma/enums";
 import { AppError } from "@/lib/errors";
-import { requireRole } from "@/modules/auth/authorization";
+import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import {
   getSupplierProduct,
   listActiveCategories,
@@ -15,7 +16,7 @@ type Props = {
   searchParams: Promise<{ error?: string }>;
 };
 export default async function EditProductPage({ params, searchParams }: Props) {
-  const actor = await requireRole(Role.SUPPLIER);
+  const actor = await requireProtectedPage(Role.SUPPLIER);
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const [product, categories] = await (async () => {
     try {
@@ -30,6 +31,7 @@ export default async function EditProductPage({ params, searchParams }: Props) {
   })();
   return (
     <main className="page-shell narrow">
+      <AuthenticatedNavigation actor={actor} />
       <Link href="/supplier/products">← Products</Link>
       <p className="eyebrow">Supplier catalog</p>
       <h1>Edit product</h1>

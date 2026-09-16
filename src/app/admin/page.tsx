@@ -1,19 +1,15 @@
-import Link from "next/link";
+import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
+import { Role } from "@/generated/prisma/enums";
 import { formatMinorUnits } from "@/lib/money";
 import { getAdminDashboard } from "@/modules/admin/dashboard";
-import { getCurrentActor } from "@/modules/auth/authorization";
+import { requireProtectedPage } from "@/modules/auth/page-authorization";
 
 export default async function AdminPage() {
-  const dashboard = await getAdminDashboard(await getCurrentActor());
+  const actor = await requireProtectedPage(Role.ADMIN);
+  const dashboard = await getAdminDashboard(actor);
   return (
     <main className="page-shell">
-      <nav className="top-nav">
-        <Link href="/">Inventory</Link>
-        <span className="action-row">
-          <Link href="/admin/categories">Manage categories</Link>
-          <Link href="/orders">Manage orders</Link>
-        </span>
-      </nav>
+      <AuthenticatedNavigation actor={actor} />
       <p className="eyebrow">Admin operations</p>
       <h1>Dashboard</h1>
       <p className="lede">
