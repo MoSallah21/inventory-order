@@ -39,3 +39,30 @@ No order-transition trigger is included in this phase.
 ## ADR-008: Demo data is explicitly gated
 
 The deterministic seed refuses to run unless `SEED_DEMO_DATA=true`. All demo credentials are public test-only values.
+
+## ADR-009: Catalog authority stays server-side
+
+Keep validation, ownership, category availability, archival, and money conversion in `src/modules/catalog`. Server
+actions are transport adapters and reauthorize on every call. Public reads return explicit DTOs.
+
+## ADR-010: Temporary external image URL boundary
+
+Until managed uploads exist, require an HTTPS image URL for new and updated products. Do not display a file input or
+claim that the application uploads the image.
+
+## ADR-011: Integration cleanup is exact-ID scoped
+
+Database integration tests generate unique IDs and delete only the exact product, category, and user IDs they created.
+They never truncate or broadly clean shared local tables.
+
+## ADR-012: Canonical stock input syntax
+
+Parse raw stock form entries before coercion. Accept only `0` or a non-zero decimal digit followed by decimal digits;
+reject whitespace, signs, leading zeroes, fractions, alternate bases, exponent notation, locale formatting, unsafe
+integers, and values above the business bound. Retain numeric validation in the catalog service.
+
+## ADR-013: Category activity is serialized with product mutations
+
+Use parameterized `SELECT ... FOR UPDATE` helpers inside short interactive PostgreSQL transactions. Create locks the
+category. Update locks the supplier-owned product and then the category. Archive locks the category. This gives the
+active-category decision and product write a transaction boundary without changing the applied migration.

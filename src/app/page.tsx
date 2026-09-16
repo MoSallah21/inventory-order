@@ -10,16 +10,22 @@ export default function Home() {
         Inventory &amp; Order Management System
       </h1>
       <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-        Authentication, authorization boundaries, and the database foundation
-        are in place. Catalog, inventory, checkout, order workflows, and
-        dashboards are intentionally not implemented yet.
+        Browse the public catalog or sign in to manage role-specific inventory.
       </p>
-      <Link
-        className="mt-8 w-fit rounded-md bg-slate-900 px-5 py-3 text-white"
-        href="/sign-in"
-      >
-        Sign in
-      </Link>
+      <div className="mt-8 flex gap-3">
+        <Link
+          className="rounded-md bg-slate-900 px-5 py-3 text-white"
+          href="/products"
+        >
+          Browse products
+        </Link>
+        <Link
+          className="rounded-md border border-slate-300 px-5 py-3"
+          href="/sign-in"
+        >
+          Sign in
+        </Link>
+      </div>
     </main>
   );
 }

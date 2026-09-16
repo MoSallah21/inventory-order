@@ -1,7 +1,7 @@
 # Inventory & Order Management System
 
-Foundation for a role-based inventory and order management modular monolith. This phase establishes the database,
-credentials authentication, authorization helpers, deterministic demo data, and minimal protected pages.
+Role-based inventory and order management modular monolith with database-backed authentication, category management,
+supplier-owned product management, and a public catalog.
 
 ## Status
 
@@ -13,10 +13,18 @@ Implemented:
 - Server-side actor, disabled-account, and role checks.
 - Minimal sign-in and protected `/admin`, `/supplier`, and `/account` placeholders.
 - Deterministic demo users, categories, and products.
-- Targeted authorization, error-serialization, and money tests.
+- Admin category management at `/admin/categories`.
+- Supplier product management at `/supplier/products`.
+- Server-rendered public catalog at `/products`.
+- Unit and isolated PostgreSQL integration tests.
 
-Not implemented yet: category UI, product CRUD, images, cart, checkout, order transitions, dashboards, search,
-pagination, notifications, exports, caching, and rate limiting.
+Not implemented yet: product image upload, cart, checkout, order transitions, dashboards, search, pagination,
+notifications, exports, caching, and rate limiting.
+
+## Product images
+
+Product creation currently accepts a validated HTTPS image URL. This is an explicit temporary boundary: there is no
+file picker and no implied upload. Managed image upload is reserved for the next dedicated phase.
 
 ## Requirements
 
@@ -114,4 +122,7 @@ SEED_DEMO_DATA=true pnpm db:seed
 
 In PowerShell, set the environment variable first with `$env:SEED_DEMO_DATA='true'`.
 
-See [docs/STATUS.md](docs/STATUS.md) for the current verification record and blockers.
+The complete test suite requires the configured local PostgreSQL database. Integration records use unique IDs and
+cleanup targets only those exact IDs.
+
+See [docs/STATUS.md](docs/STATUS.md) for the current verification record.

@@ -1,6 +1,6 @@
 # Status
 
-## Completed foundation
+## Completed
 
 - Project scaffold and exact dependency pins.
 - Strict TypeScript, Tailwind, ESLint, and Prettier configuration.
@@ -13,6 +13,11 @@
 - Deterministic guarded seed and documented demo accounts.
 - Minimal sign-in and three protected role placeholders.
 - Targeted foundation tests.
+- Live migration, seed, constraint, relation, and authentication verification.
+- Admin category create/edit/archive UI and services.
+- Supplier-owned product create/edit/archive UI and services.
+- Public product list/detail with safe DTO filtering.
+- PostgreSQL integration coverage for catalog rules and database constraints.
 
 ## Verification record
 
@@ -25,19 +30,18 @@ Successful:
 - Offline `prisma migrate diff --from-empty --to-schema ... --script` inspection.
 - TypeScript typecheck.
 - ESLint.
-- 11 targeted tests across 3 files.
+- 51 unit and PostgreSQL integration tests across 5 files.
 - Prettier check.
 - Production build.
 
-Blocked by unavailable valid local PostgreSQL credentials:
-
-- `prisma migrate deploy` reached `localhost:5432` but exited 1 with a schema-engine connection/authentication failure.
-- `prisma db seed` exited 1 with Prisma `P1000` authentication failure for the example `postgres` credentials.
-- Browser/database sign-in verification.
+The implementation session previously completed live seed and authentication verification. An independent audit later
+could not reproduce PostgreSQL connectivity in its own execution environment; that was an auditor-environment result,
+not evidence that the earlier checks failed. In this current session, Docker reports PostgreSQL 17.6 healthy and Prisma
+reports the single committed migration is applied and the schema is up to date.
 
 Supply-chain and review notes:
 
-- The tracked-file inventory was reviewed because this directory is not a Git repository and has no diff baseline.
+- The complete Git diff relative to `633ddeb` is reviewed before handoff.
 - No `.env` file, real secret, generated Prisma client, dependency directory, or build output is tracked by project rules.
 - The only double assertion is the conventional development singleton holder for Prisma on `globalThis`; there are no
   `any`, suppression comments, or unfinished domain stubs.
@@ -46,13 +50,10 @@ Supply-chain and review notes:
 
 ## Next phase
 
-Implement category and supplier-owned product services/UI, followed by production image upload. Keep ownership checks in
-the server service layer and add real PostgreSQL integration tests before checkout work begins.
+Implement managed product image upload and lifecycle handling. After that, design cart and checkout transactions with
+stock concurrency controls before implementing order workflows.
 
-## Part A continuation
+## Test isolation
 
-- Git was initialized locally; no remote was configured and no commit has been created yet.
-- A PostgreSQL-only Compose definition and ignored local environment were added.
-- Docker CLI/Desktop is not installed in the current environment, so Compose configuration, database health,
-  migrations, seed, constraint smoke tests, and authentication runtime verification are currently gated.
-- Part B has not started and must remain blocked until every Part A runtime check succeeds.
+Catalog integration tests require the configured PostgreSQL database. Each run uses randomized IDs and cleanup deletes
+only the exact records created by that run. Seeded data is never selected for cleanup.
