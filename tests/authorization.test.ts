@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/db", () => ({ prisma: {} }));
+vi.mock("@/modules/auth/auth", () => ({ auth: {} }));
 
 import { Role } from "@/generated/prisma/enums";
 import { AppError } from "@/lib/errors";
