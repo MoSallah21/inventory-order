@@ -67,10 +67,15 @@ export default async function CategoriesPage({ searchParams }: Props) {
 
       <section className="stack" aria-label="Existing categories">
         {categories.map((category) => (
-          <article className="panel" key={category.id}>
+          <article
+            className={`panel category-card${category.archivedAt ? " archived" : ""}`}
+            key={category.id}
+          >
             <div className="row">
               <h2>{category.name}</h2>
-              <span className="badge">
+              <span
+                className={`badge ${category.archivedAt ? "badge-archived" : "badge-active"}`}
+              >
                 {category.archivedAt ? "Archived" : "Active"}
               </span>
             </div>

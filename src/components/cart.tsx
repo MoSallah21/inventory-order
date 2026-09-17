@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { placeOrderAction, type CheckoutState } from "@/app/orders/actions";
 import { readCart, saveCart, type CartRecord } from "@/components/add-to-cart";
+import { formatMinorUnits } from "@/lib/money";
 import {
   groupCartTotals,
   shouldClearCart,
@@ -108,6 +109,15 @@ export function Cart({ products }: { products: Product[] }) {
               value={cart[product.id]}
             />
           </label>
+          <div className="cart-line-total">
+            <span>Line total</span>
+            <strong>
+              {formatMinorUnits(
+                BigInt(product.priceMinor) * BigInt(cart[product.id]),
+                product.currency,
+              )}
+            </strong>
+          </div>
           <button
             className="text-button"
             onClick={() => remove(product.id)}
@@ -118,9 +128,12 @@ export function Cart({ products }: { products: Product[] }) {
         </article>
       ))}
       {!selected.length ? (
-        <p className="empty">
-          Your cart is empty. <Link href="/products">Browse products</Link>.
-        </p>
+        <div className="panel empty-state">
+          <p>Your cart is empty.</p>
+          <Link className="button-link" href="/products">
+            Browse products
+          </Link>
+        </div>
       ) : null}
       {state.error ? (
         <p className="notice error" role="alert">

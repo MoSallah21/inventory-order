@@ -30,34 +30,36 @@ export default async function ProductDetailPage({ params }: Props) {
       <Link className="back-link" href="/products">
         ← Back to products
       </Link>
-      <article className="detail-card">
+      <article className="detail-card product-detail">
         <ProductImage imageUrl={product.imageUrl} name={product.name} />
-        <p className="eyebrow">{product.category.name}</p>
-        <h1>{product.name}</h1>
-        <p className="lede">{product.description}</p>
-        <dl>
-          <div>
-            <dt>Supplier</dt>
-            <dd>{product.supplierName}</dd>
-          </div>
-          <div>
-            <dt>Price</dt>
-            <dd>{product.formattedPrice}</dd>
-          </div>
-          <div>
-            <dt>Availability</dt>
-            <dd>
-              {product.stockQuantity > 0
-                ? `${product.stockQuantity} in stock`
-                : "Out of stock"}
-            </dd>
-          </div>
-        </dl>
-        <ProductPurchaseAction
-          capability={purchaseCapability}
-          productId={product.id}
-          stockQuantity={product.stockQuantity}
-        />
+        <div className="product-detail-content">
+          <p className="eyebrow">{product.category.name}</p>
+          <h1>{product.name}</h1>
+          <p className="lede">{product.description}</p>
+          <dl>
+            <div>
+              <dt>Supplier</dt>
+              <dd>{product.supplierName}</dd>
+            </div>
+            <div>
+              <dt>Price</dt>
+              <dd>{product.formattedPrice}</dd>
+            </div>
+            <div>
+              <dt>Availability</dt>
+              <dd>
+                {product.stockQuantity > 0
+                  ? `${product.stockQuantity} in stock`
+                  : "Out of stock"}
+              </dd>
+            </div>
+          </dl>
+          <ProductPurchaseAction
+            capability={purchaseCapability}
+            productId={product.id}
+            stockQuantity={product.stockQuantity}
+          />
+        </div>
       </article>
     </main>
   );

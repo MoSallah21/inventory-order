@@ -13,6 +13,7 @@ vi.mock("@/modules/auth/authorization", async (importOriginal) => {
     await importOriginal<typeof import("@/modules/auth/authorization")>();
   return { ...original, getCurrentActor: mocks.getCurrentActor };
 });
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
 import Home from "@/app/page";
 

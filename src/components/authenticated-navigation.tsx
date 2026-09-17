@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { NavigationLink } from "@/components/navigation-link";
 import { SignOutButton } from "@/components/sign-out-button";
 import type { Actor } from "@/modules/auth/authorization";
 import {
@@ -8,10 +9,13 @@ import {
 } from "@/modules/auth/navigation";
 
 export function AuthenticatedNavigation({ actor }: { actor: Actor }) {
+  const links = ROLE_NAVIGATION[actor.role];
+  const activeHrefs = links.map((link) => link.href);
+
   return (
-    <header className="authenticated-header">
+    <header className={`authenticated-header role-${actor.role.toLowerCase()}`}>
       <div className="brand-block">
-        <Link className="app-name" href={ROLE_NAVIGATION[actor.role][0].href}>
+        <Link className="app-name nav-touch-target" href={links[0].href}>
           Inventory &amp; Orders
         </Link>
         <span className="workspace-label">
@@ -19,10 +23,14 @@ export function AuthenticatedNavigation({ actor }: { actor: Actor }) {
         </span>
       </div>
       <nav aria-label={`${actor.role.toLowerCase()} navigation`}>
-        {ROLE_NAVIGATION[actor.role].map((link) => (
-          <Link href={link.href} key={link.href}>
+        {links.map((link) => (
+          <NavigationLink
+            activeHrefs={activeHrefs}
+            href={link.href}
+            key={link.href}
+          >
             {link.label}
-          </Link>
+          </NavigationLink>
         ))}
       </nav>
       <div className="identity">

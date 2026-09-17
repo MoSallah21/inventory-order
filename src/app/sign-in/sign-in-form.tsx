@@ -34,14 +34,11 @@ export function SignInForm() {
   }
 
   return (
-    <form className="mt-8 space-y-5" onSubmit={onSubmit}>
+    <form onSubmit={onSubmit}>
       <div>
-        <label className="block text-sm font-medium" htmlFor="email">
-          Email
-        </label>
+        <label htmlFor="email">Email</label>
         <input
           autoComplete="email"
-          className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2"
           id="email"
           name="email"
           required
@@ -49,12 +46,9 @@ export function SignInForm() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium" htmlFor="password">
-          Password
-        </label>
+        <label htmlFor="password">Password</label>
         <input
           autoComplete="current-password"
-          className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2"
           id="password"
           minLength={12}
           name="password"
@@ -63,15 +57,11 @@ export function SignInForm() {
         />
       </div>
       {error ? (
-        <p aria-live="polite" className="text-sm text-red-700">
+        <p aria-live="polite" className="notice error" role="alert">
           {error}
         </p>
       ) : null}
-      <button
-        className="w-full rounded-md bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
-        disabled={pending}
-        type="submit"
-      >
+      <button disabled={pending} type="submit">
         {pending ? "Signing in…" : "Sign in"}
       </button>
     </form>

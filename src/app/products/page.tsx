@@ -148,7 +148,15 @@ export default async function ProductsPage({ searchParams }: Props) {
             <p>Supplied by {product.supplierName}</p>
             <div className="row">
               <strong>{product.formattedPrice}</strong>
-              <span>
+              <span
+                className={
+                  product.stockQuantity > 5
+                    ? "stock-healthy"
+                    : product.stockQuantity > 0
+                      ? "stock-low"
+                      : "stock-unavailable"
+                }
+              >
                 {product.stockQuantity > 0
                   ? `${product.stockQuantity} available`
                   : "Out of stock"}

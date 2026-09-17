@@ -52,16 +52,29 @@ export default async function SupplierProductsPage({ searchParams }: Props) {
           <article className="product-card" key={product.id}>
             <ProductImage imageUrl={product.imageUrl} name={product.name} />
             <div className="row">
-              <span className="badge">
+              <span
+                className={`badge ${product.archivedAt ? "badge-archived" : "badge-active"}`}
+              >
                 {product.archivedAt ? "Archived" : "Active"}
               </span>
-              <span>{product.stockQuantity} in stock</span>
+              <span
+                className={
+                  product.stockQuantity <= 5 ? "stock-low" : "stock-healthy"
+                }
+              >
+                {product.stockQuantity} in stock
+              </span>
             </div>
             <h2>{product.name}</h2>
             <p>{product.category.name}</p>
             <strong>{formatMinorUnits(product.priceMinor)}</strong>
             <div className="row">
-              <Link href={`/supplier/products/${product.id}/edit`}>Edit</Link>
+              <Link
+                className="button-link secondary"
+                href={`/supplier/products/${product.id}/edit`}
+              >
+                Edit product
+              </Link>
               {!product.archivedAt ? (
                 <form action={archiveProductAction}>
                   <input name="id" type="hidden" value={product.id} />

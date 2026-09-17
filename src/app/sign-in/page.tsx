@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { getCurrentActor } from "@/modules/auth/authorization";
 import { enabledActorHome } from "@/modules/auth/navigation";
@@ -10,12 +11,28 @@ export default async function SignInPage() {
   if (destination) redirect(destination);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <h1 className="text-3xl font-semibold">Sign in</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        Use one of the seeded demo accounts.
-      </p>
-      <SignInForm />
+    <main className="auth-shell">
+      <section className="auth-intro" aria-labelledby="auth-intro-heading">
+        <Link className="app-name" href="/">
+          Inventory &amp; Orders
+        </Link>
+        <div>
+          <p className="eyebrow">Secure workspace access</p>
+          <p className="auth-intro-title" id="auth-intro-heading">
+            Keep inventory moving.
+          </p>
+          <p>
+            One operational workspace for catalog control, fulfillment, and
+            dependable order tracking.
+          </p>
+        </div>
+      </section>
+      <section className="auth-panel">
+        <p className="eyebrow">Welcome back</p>
+        <h1>Sign in</h1>
+        <p className="lede">Use one of the provided demo accounts.</p>
+        <SignInForm />
+      </section>
     </main>
   );
 }

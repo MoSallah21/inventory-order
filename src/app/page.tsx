@@ -11,25 +11,25 @@ export default async function Home() {
   return (
     <main className="page-shell narrow">
       {navigation}
-      <p className="eyebrow">Inventory &amp; order management</p>
-      <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-        Inventory &amp; Order Management System
-      </h1>
-      <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-        {workspace
-          ? "Browse the public catalog or return to your role-specific workspace."
-          : "Browse the public catalog or sign in to manage role-specific inventory."}
-      </p>
-      <div className="action-row">
-        <Link className="button-link" href="/products">
-          Browse products
-        </Link>
-        {!workspace ? (
-          <Link className="button-link secondary" href="/sign-in">
-            Sign in
+      <section className="hero-panel">
+        <p className="eyebrow">Inventory &amp; order management</p>
+        <h1>Clear stock. Dependable orders.</h1>
+        <p className="lede">
+          {workspace
+            ? "Browse the active catalog or return to your role-specific operations workspace."
+            : "Explore active inventory or sign in to manage products, fulfillment, or purchases."}
+        </p>
+        <div className="action-row">
+          <Link className="button-link" href="/products">
+            Browse products
           </Link>
-        ) : null}
-      </div>
+          {!workspace ? (
+            <Link className="button-link secondary" href="/sign-in">
+              Sign in
+            </Link>
+          ) : null}
+        </div>
+      </section>
     </main>
   );
 }
