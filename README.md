@@ -3,6 +3,19 @@
 Role-based inventory and order management modular monolith with database-backed authentication, catalog management,
 transactional customer checkout, and an authorized order-status workflow.
 
+## Live deployment
+
+- Application: [https://inventory-order-mohamad.vercel.app](https://inventory-order-mohamad.vercel.app)
+- Source: [https://github.com/MoSallah21/inventory-order](https://github.com/MoSallah21/inventory-order)
+
+### Demo accounts
+
+All demo accounts use the password `DemoPass!2026`.
+
+- Admin: `admin@example.test`
+- Supplier: `supplier1@example.test`
+- Customer: `customer@example.test`
+
 ## Status
 
 Implemented:
