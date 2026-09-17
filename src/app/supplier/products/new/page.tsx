@@ -5,6 +5,7 @@ import { Role } from "@/generated/prisma/enums";
 import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { listActiveCategories } from "@/modules/catalog/service";
 import { createProductAction } from "../actions";
+import { PageHeader } from "@/components/page-header";
 
 type Props = { searchParams: Promise<{ error?: string }> };
 export default async function NewProductPage({ searchParams }: Props) {
@@ -14,13 +15,18 @@ export default async function NewProductPage({ searchParams }: Props) {
     searchParams,
   ]);
   return (
-    <main className="page-shell narrow">
+    <main className="page-shell workspace-page" id="workspace-content">
       <AuthenticatedNavigation actor={actor} />
-      <Link className="back-link" href="/supplier/products">
-        ← Back to products
-      </Link>
-      <p className="eyebrow">Supplier catalog</p>
-      <h1>Add product</h1>
+      <PageHeader
+        eyebrow="Supplier catalog"
+        title="Add product"
+        description="Create a sellable inventory record with classification, pricing, stock, and media."
+        actions={
+          <Link className="button-link secondary" href="/supplier/products">
+            Back to inventory
+          </Link>
+        }
+      />
       {query.error ? (
         <p className="notice error" role="alert">
           {query.error}

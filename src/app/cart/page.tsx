@@ -6,6 +6,7 @@ import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
 import { Role } from "@/generated/prisma/enums";
 import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { listPublicProducts } from "@/modules/catalog/service";
+import { PageHeader } from "@/components/page-header";
 
 export default async function CartPage() {
   await connection();
@@ -21,16 +22,18 @@ export default async function CartPage() {
     imageUrl: product.imageUrl,
   }));
   return (
-    <main className="page-shell narrow">
+    <main className="page-shell workspace-page" id="workspace-content">
       <AuthenticatedNavigation actor={actor} />
-      <Link className="back-link" href="/products">
-        ← Continue shopping
-      </Link>
-      <p className="eyebrow">Customer checkout</p>
-      <h1>Your cart</h1>
-      <p className="lede">
-        Review quantities before placing one atomic checkout.
-      </p>
+      <PageHeader
+        eyebrow="Customer checkout"
+        title="Cart review"
+        description="Confirm quantities and availability before placing one atomic checkout."
+        actions={
+          <Link className="button-link secondary" href="/products">
+            Continue shopping
+          </Link>
+        }
+      />
       <Cart products={products} />
     </main>
   );

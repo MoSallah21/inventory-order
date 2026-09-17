@@ -10,6 +10,8 @@ import { Role } from "@/generated/prisma/enums";
 import { parsePage, type QueryValue } from "@/lib/pagination";
 import { getCurrentActor } from "@/modules/auth/authorization";
 import { listPublicProductsPage } from "@/modules/catalog/service";
+import { PageHeader } from "@/components/page-header";
+import { AppIcon } from "@/components/app-icon";
 
 type Query = Record<string, QueryValue>;
 type Props = { searchParams: Promise<Query> };
@@ -57,12 +59,24 @@ export default async function ProductsPage({ searchParams }: Props) {
   return (
     <main className="page-shell">
       <PublicNavigation actor={actor} />
-      <p className="eyebrow">Public catalog</p>
-      <h1>Products</h1>
-      <p className="lede">
-        Browse currently available products from active suppliers.
-      </p>
+      <PageHeader
+        eyebrow="Live inventory"
+        title="Product catalog"
+        description="Browse active inventory from verified suppliers and inspect real-time availability."
+        meta={
+          <span className="context-chip">
+            {result.totalCount} available listings
+          </span>
+        }
+      />
       <form action="/products" className="panel filter-form" method="get">
+        <div className="filter-heading">
+          <AppIcon name="filters" />
+          <div>
+            <strong>Filter inventory</strong>
+            <span>Refine by product, source, price, or stock.</span>
+          </div>
+        </div>
         <label>
           Product name
           <input defaultValue={filters.q} name="q" type="search" />
@@ -131,7 +145,8 @@ export default async function ProductsPage({ searchParams }: Props) {
         </p>
       ) : null}
       {hasFilters && !filters.error ? (
-        <p className="hint" role="status">
+        <p className="active-filter-summary" role="status">
+          <AppIcon name="search" />
           Showing {result.totalCount} matching{" "}
           {result.totalCount === 1 ? "product" : "products"}.
         </p>

@@ -21,6 +21,7 @@ export function activeNavigationHref(
 
 type Props = {
   activeHrefs: readonly string[];
+  announceCurrent?: boolean;
   children?: ReactNode;
   className?: string;
   href: string;
@@ -28,6 +29,7 @@ type Props = {
 
 export function NavigationLink({
   activeHrefs,
+  announceCurrent = true,
   children,
   className = "",
   href,
@@ -46,7 +48,7 @@ export function NavigationLink({
   return (
     <Link
       {...props}
-      aria-current={active ? "page" : undefined}
+      aria-current={active && announceCurrent ? "page" : undefined}
       className={classes}
       href={href}
     >

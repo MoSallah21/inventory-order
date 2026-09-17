@@ -10,6 +10,7 @@ import {
   listActiveCategories,
 } from "@/modules/catalog/service";
 import { updateProductAction } from "../../actions";
+import { PageHeader } from "@/components/page-header";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -30,13 +31,18 @@ export default async function EditProductPage({ params, searchParams }: Props) {
     }
   })();
   return (
-    <main className="page-shell narrow">
+    <main className="page-shell workspace-page" id="workspace-content">
       <AuthenticatedNavigation actor={actor} />
-      <Link className="back-link" href="/supplier/products">
-        ← Back to products
-      </Link>
-      <p className="eyebrow">Supplier catalog</p>
-      <h1>Edit product</h1>
+      <PageHeader
+        eyebrow="Supplier catalog"
+        title="Edit product"
+        description="Update product identity, classification, pricing, available stock, and media."
+        actions={
+          <Link className="button-link secondary" href="/supplier/products">
+            Back to inventory
+          </Link>
+        }
+      />
       {query.error ? (
         <p className="notice error" role="alert">
           {query.error}

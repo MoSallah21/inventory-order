@@ -43,4 +43,20 @@ describe("shared UI design system", () => {
     expect(css).toContain("animation-duration: 0.01ms !important");
     expect(css).toContain("transition-duration: 0.01ms !important");
   });
+
+  it("defines the responsive operations shell and shared visual primitives", async () => {
+    const [css, navigation, icon, header] = await Promise.all([
+      readFile(`${root}/src/app/globals.css`, "utf8"),
+      readFile(`${root}/src/components/authenticated-navigation.tsx`, "utf8"),
+      readFile(`${root}/src/components/app-icon.tsx`, "utf8"),
+      readFile(`${root}/src/components/page-header.tsx`, "utf8"),
+    ]);
+
+    expect(css).toContain(".workspace-sidebar");
+    expect(css).toContain(".mobile-workspace-header");
+    expect(navigation).toContain('href="#workspace-content"');
+    expect(navigation).toContain("announceCurrent={announceCurrent}");
+    expect(icon).toContain('aria-hidden="true"');
+    expect(header).toContain('className="page-header"');
+  });
 });

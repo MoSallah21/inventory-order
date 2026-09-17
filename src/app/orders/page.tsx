@@ -8,6 +8,7 @@ import { parsePage, type QueryValue } from "@/lib/pagination";
 import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { listOrdersPage } from "@/modules/orders/service";
 import { formatOrderDate } from "@/modules/orders/presentation";
+import { PageHeader } from "@/components/page-header";
 
 type Props = {
   searchParams: Promise<{ placed?: QueryValue; page?: QueryValue }>;
@@ -32,24 +33,27 @@ export default async function OrdersPage({ searchParams }: Props) {
     return suffix ? `/orders?${suffix}` : "/orders";
   };
   return (
-    <main className="page-shell">
+    <main className="page-shell workspace-page" id="workspace-content">
       <AuthenticatedNavigation actor={actor} />
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">{actor.role.toLowerCase()} orders</p>
-          <h1>Orders</h1>
-        </div>
-        {actor.role === Role.ADMIN ? (
-          <Link className="button-link secondary" href="/orders/export">
-            Export orders CSV
-          </Link>
-        ) : null}
-      </div>
-      <p className="lede">
-        {actor.role === Role.CUSTOMER
-          ? "Track purchases and review their current status."
-          : "Review orders and take the next allowed fulfillment action."}
-      </p>
+      <PageHeader
+        eyebrow={`${actor.role.toLowerCase()} operations`}
+        title="Order pipeline"
+        description={
+          actor.role === Role.CUSTOMER
+            ? "Track purchases and review their current status."
+            : "Review orders and take the next allowed fulfillment action."
+        }
+        actions={
+          actor.role === Role.ADMIN ? (
+            <Link className="button-link secondary" href="/orders/export">
+              Export orders CSV
+            </Link>
+          ) : undefined
+        }
+        meta={
+          <span className="context-chip">{result.totalCount} total orders</span>
+        }
+      />
       {query.placed ? (
         <p className="notice success" role="status">
           Order placed successfully. Its current status is shown below.
@@ -95,9 +99,25 @@ export default async function OrdersPage({ searchParams }: Props) {
                     ? `Customer: ${order.customer.name}`
                     : `Customer: ${order.customer.name} · Supplier: ${order.supplier.name}`}
               </p>
-              <p className="hint">
-                Created {formatOrderDate(order.createdAt)} UTC
-              </p>
+              <dl className="order-card-meta">
+                <div>
+                  <dt>Created</dt>
+                  <dd>{formatOrderDate(order.createdAt)} UTC</dd>
+                </div>
+                <div>
+                  <dt>Updated</dt>
+                  <dd>
+                    {formatOrderDate(
+                      order.cancelledAt ??
+                        order.deliveredAt ??
+                        order.shippedAt ??
+                        order.confirmedAt ??
+                        order.createdAt,
+                    )}{" "}
+                    UTC
+                  </dd>
+                </div>
+              </dl>
             </div>
             <div className="order-card-actions">
               <strong>{order.formattedTotal}</strong>

@@ -12,22 +12,56 @@ export default async function Home() {
     <main className="page-shell narrow">
       {navigation}
       <section className="hero-panel">
-        <p className="eyebrow">Inventory &amp; order management</p>
-        <h1>Clear stock. Dependable orders.</h1>
-        <p className="lede">
-          {workspace
-            ? "Browse the active catalog or return to your role-specific operations workspace."
-            : "Explore active inventory or sign in to manage products, fulfillment, or purchases."}
-        </p>
-        <div className="action-row">
-          <Link className="button-link" href="/products">
-            Browse products
-          </Link>
-          {!workspace ? (
-            <Link className="button-link secondary" href="/sign-in">
-              Sign in
+        <div className="gateway-copy">
+          <p className="eyebrow">Inventory operations platform</p>
+          <h1>Stock clarity from shelf to delivery.</h1>
+          <p className="lede">
+            {workspace
+              ? "Browse the live catalog or return to your role-specific operations workspace."
+              : "Browse products or sign in to a focused workspace for inventory control, purchasing, and dependable fulfillment."}
+          </p>
+          <div className="action-row">
+            <Link className="button-link" href="/products">
+              Browse products
             </Link>
-          ) : null}
+            {!workspace ? (
+              <Link className="button-link secondary" href="/sign-in">
+                Sign in to workspace
+              </Link>
+            ) : (
+              <Link className="button-link secondary" href={workspace}>
+                Back to workspace
+              </Link>
+            )}
+          </div>
+        </div>
+        <aside className="gateway-manifest" aria-label="Platform capabilities">
+          <p>Operational coverage</p>
+          <ol>
+            <li>
+              <span>01</span> Active catalog visibility
+            </li>
+            <li>
+              <span>02</span> Role-based inventory control
+            </li>
+            <li>
+              <span>03</span> Order lifecycle tracking
+            </li>
+          </ol>
+        </aside>
+      </section>
+      <section className="gateway-strip" aria-label="Workspace principles">
+        <div>
+          <strong>One source of truth</strong>
+          <span>Current inventory and immutable order records.</span>
+        </div>
+        <div>
+          <strong>Role-specific control</strong>
+          <span>Purpose-built views for each operation.</span>
+        </div>
+        <div>
+          <strong>Clear handoffs</strong>
+          <span>Visible status from purchase to delivery.</span>
         </div>
       </section>
     </main>

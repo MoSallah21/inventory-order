@@ -71,62 +71,81 @@ export function Cart({ products }: { products: Product[] }) {
     saveCart(next);
   }
   return (
-    <form action={action} className="stack">
+    <form action={action} className="checkout-layout">
       <input name="idempotencyKey" type="hidden" value={key} />
-      {selected.map((product) => (
-        <article className="panel cart-line" key={product.id}>
-          <div
-            aria-label={`${product.name} product image`}
-            className={`cart-image${product.imageUrl ? "" : " product-image-placeholder"}`}
-            role="img"
-            style={
-              product.imageUrl
-                ? {
-                    backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
-                  }
-                : undefined
-            }
-          >
-            {product.imageUrl ? null : "No image"}
-          </div>
+      <div className="cart-items">
+        <div className="section-heading">
           <div>
-            <strong>{product.name}</strong>
-            <p>Supplier: {product.supplierName}</p>
-            <p>{product.formattedPrice} each</p>
+            <p className="eyebrow">Items</p>
+            <h2>
+              {selected.length} {selected.length === 1 ? "product" : "products"}
+            </h2>
           </div>
-          <input name="productId" type="hidden" value={product.id} />
-          <label>
-            Quantity{" "}
-            <input
-              aria-label={`${product.name} quantity`}
-              max={10000}
-              min={1}
-              name="quantity"
-              onChange={(event) => update(product.id, event.target.value)}
-              required
-              step={1}
-              type="number"
-              value={cart[product.id]}
-            />
-          </label>
-          <div className="cart-line-total">
-            <span>Line total</span>
-            <strong>
-              {formatMinorUnits(
-                BigInt(product.priceMinor) * BigInt(cart[product.id]),
-                product.currency,
-              )}
-            </strong>
-          </div>
-          <button
-            className="text-button"
-            onClick={() => remove(product.id)}
-            type="button"
-          >
-            Remove
-          </button>
-        </article>
-      ))}
+        </div>
+        {selected.map((product) => (
+          <article className="panel cart-line" key={product.id}>
+            <div
+              aria-label={`${product.name} product image`}
+              className={`cart-image${product.imageUrl ? "" : " product-image-placeholder"}`}
+              role="img"
+              style={
+                product.imageUrl
+                  ? {
+                      backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
+                    }
+                  : undefined
+              }
+            >
+              {product.imageUrl ? null : "No image"}
+            </div>
+            <div>
+              <strong>{product.name}</strong>
+              <p>Supplier: {product.supplierName}</p>
+              <p>{product.formattedPrice} each</p>
+            </div>
+            <input name="productId" type="hidden" value={product.id} />
+            <label>
+              Quantity{" "}
+              <input
+                aria-label={`${product.name} quantity`}
+                max={10000}
+                min={1}
+                name="quantity"
+                onChange={(event) => update(product.id, event.target.value)}
+                required
+                step={1}
+                type="number"
+                value={cart[product.id]}
+              />
+            </label>
+            {cart[product.id] > product.stockQuantity ? (
+              <p className="cart-stock-warning" role="alert">
+                {product.stockQuantity > 0
+                  ? "Only " +
+                    product.stockQuantity +
+                    " currently available. Reduce the quantity before checkout."
+                  : "Currently unavailable. Remove this item before checkout."}
+              </p>
+            ) : null}
+            <div className="cart-line-total">
+              <span>Line total</span>
+              <strong>
+                {formatMinorUnits(
+                  BigInt(product.priceMinor) * BigInt(cart[product.id]),
+                  product.currency,
+                )}
+              </strong>
+            </div>
+            <button
+              className="text-button"
+              onClick={() => remove(product.id)}
+              type="button"
+            >
+              Remove
+            </button>
+          </article>
+        ))}
+      </div>
       {!selected.length ? (
         <div className="panel empty-state">
           <p>Your cart is empty.</p>
@@ -141,9 +160,12 @@ export function Cart({ products }: { products: Product[] }) {
         </p>
       ) : null}
       {selected.length ? (
-        <>
-          <div className="cart-total">
-            <span>Total:</span>
+        <aside className="checkout-summary">
+          <p className="eyebrow">Order summary</p>
+          <h2>Checkout totals</h2>
+          <p className="hint">Totals remain separated by currency.</p>
+          <div className="cart-total" aria-label="Cart totals by currency">
+            <span>Due now</span>
             {totals.map((total) => (
               <span key={total.currency}>{total.formatted}</span>
             ))}
@@ -154,7 +176,8 @@ export function Cart({ products }: { products: Product[] }) {
           >
             {pending ? "Placing order…" : "Place order"}
           </button>
-        </>
+          <small>Stock is verified again when the order is placed.</small>
+        </aside>
       ) : null}
     </form>
   );

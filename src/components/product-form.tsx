@@ -61,52 +61,50 @@ export function ProductForm({ action, categories, product }: Props) {
     >
       {product ? <input name="id" type="hidden" value={product.id} /> : null}
       <h2 className="form-section-title full">Basic information</h2>
-      <label>
-        Name
+      <label htmlFor="product-name">
+        <span>
+          Name <span className="required-marker">Required</span>
+        </span>
         <input
+          aria-describedby="product-name-hint"
           defaultValue={product?.name}
+          id="product-name"
           maxLength={120}
           name="name"
           required
         />
+        <small className="field-hint" id="product-name-hint">
+          Use the name customers will recognize in the catalog.
+        </small>
       </label>
-      <label className="full">
-        Description
+      <label className="full" htmlFor="product-description">
+        <span>
+          Description <span className="required-marker">Required</span>
+        </span>
         <textarea
+          aria-describedby="product-description-hint"
           defaultValue={product?.description}
+          id="product-description"
           maxLength={2000}
           name="description"
           required
           rows={6}
         />
-      </label>
-      <h2 className="form-section-title full">Price and inventory</h2>
-      <label>
-        AED price
-        <input
-          defaultValue={price}
-          inputMode="decimal"
-          name="price"
-          placeholder="49.95"
-          required
-        />
-      </label>
-      <label>
-        Stock quantity
-        <input
-          defaultValue={product?.stockQuantity}
-          max={1000000}
-          min={0}
-          name="stockQuantity"
-          required
-          step={1}
-          type="number"
-        />
+        <small className="field-hint" id="product-description-hint">
+          Explain the product clearly, including details useful for purchasing.
+        </small>
       </label>
       <h2 className="form-section-title full">Category</h2>
-      <label className="full">
-        Category
-        <select defaultValue={product?.categoryId} name="categoryId" required>
+      <label className="full" htmlFor="product-category">
+        <span>
+          Category <span className="required-marker">Required</span>
+        </span>
+        <select
+          defaultValue={product?.categoryId}
+          id="product-category"
+          name="categoryId"
+          required
+        >
           <option value="">Select a category</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
@@ -114,6 +112,43 @@ export function ProductForm({ action, categories, product }: Props) {
             </option>
           ))}
         </select>
+      </label>
+      <h2 className="form-section-title full">Pricing and stock</h2>
+      <label htmlFor="product-price">
+        <span>
+          AED price <span className="required-marker">Required</span>
+        </span>
+        <input
+          aria-describedby="product-price-hint"
+          defaultValue={price}
+          id="product-price"
+          inputMode="decimal"
+          name="price"
+          placeholder="49.95"
+          required
+        />
+        <small className="field-hint" id="product-price-hint">
+          Enter the unit price in AED, including decimals when needed.
+        </small>
+      </label>
+      <label htmlFor="product-stock">
+        <span>
+          Stock quantity <span className="required-marker">Required</span>
+        </span>
+        <input
+          aria-describedby="product-stock-hint"
+          defaultValue={product?.stockQuantity}
+          id="product-stock"
+          max={1000000}
+          min={0}
+          name="stockQuantity"
+          required
+          step={1}
+          type="number"
+        />
+        <small className="field-hint" id="product-stock-hint">
+          Use zero when the product is temporarily unavailable.
+        </small>
       </label>
       <h2 className="form-section-title full">Product image</h2>
       {product ? (
@@ -130,10 +165,17 @@ export function ProductForm({ action, categories, product }: Props) {
           <ProductImage className="full" imageUrl={null} name={product.name} />
         )
       ) : null}
-      <label className="full">
-        {product ? "Replace image (optional)" : "Product image"}
+      <label className="full" htmlFor="product-image">
+        <span>
+          {product ? "Replace image" : "Product image"}{" "}
+          <span className={product ? "optional-marker" : "required-marker"}>
+            {product ? "Optional" : "Required"}
+          </span>
+        </span>
         <input
           accept="image/jpeg,image/png,image/webp"
+          aria-describedby="product-image-hint"
+          id="product-image"
           name={productImageInputName(editing, selectedFileCount)}
           onChange={(event) => {
             setSelectedFileCount(event.currentTarget.files?.length ?? 0);
@@ -142,7 +184,7 @@ export function ProductForm({ action, categories, product }: Props) {
           type="file"
         />
       </label>
-      <p className="hint full">
+      <p className="field-hint full" id="product-image-hint">
         JPEG, PNG, or WebP. Maximum 5 MiB. File content is checked on the
         server.
       </p>

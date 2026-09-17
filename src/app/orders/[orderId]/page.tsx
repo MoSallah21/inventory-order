@@ -9,6 +9,7 @@ import {
   formatOrderDate,
   orderStateMessage,
 } from "@/modules/orders/presentation";
+import { PageHeader } from "@/components/page-header";
 
 export default async function OrderPage({
   params,
@@ -33,13 +34,19 @@ export default async function OrderPage({
     order.confirmedAt ??
     order.createdAt;
   return (
-    <main className="page-shell narrow">
+    <main className="page-shell workspace-page" id="workspace-content">
       <AuthenticatedNavigation actor={actor} />
-      <Link className="back-link" href="/orders">
-        ← Back to orders
-      </Link>
-      <p className="eyebrow">Order detail</p>
-      <h1>Order {order.id.slice(-8)}</h1>
+      <PageHeader
+        eyebrow="Order detail"
+        title={<>Order {order.id.slice(-8)}</>}
+        description="Review fulfillment status, counterparties, totals, and the immutable item record."
+        actions={
+          <Link className="button-link secondary" href="/orders">
+            Back to orders
+          </Link>
+        }
+        meta={<OrderStatusBadge status={order.status} />}
+      />
       {query.error ? (
         <p className="notice error" role="alert">
           {query.error}
@@ -58,7 +65,19 @@ export default async function OrderPage({
           <p className="eyebrow" id="order-status-heading">
             Current status
           </p>
-          <OrderStatusBadge status={order.status} />
+          <div
+            className="status-timeline"
+            aria-label={`Current order status: ${order.status.toLowerCase()}`}
+          >
+            {["Pending", "Confirmed", "Shipped", "Delivered"].map((step) => (
+              <span
+                className={step.toUpperCase() === order.status ? "current" : ""}
+                key={step}
+              >
+                {step}
+              </span>
+            ))}
+          </div>
           <p className="hint">
             Last updated {formatOrderDate(lastUpdated)} UTC
           </p>

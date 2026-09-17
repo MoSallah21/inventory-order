@@ -8,6 +8,8 @@ import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { listSupplierProducts } from "@/modules/catalog/service";
 
 import { archiveProductAction } from "./actions";
+import { PageHeader } from "@/components/page-header";
+import { AppIcon } from "@/components/app-icon";
 
 type Props = {
   searchParams: Promise<{ error?: string; saved?: string; warning?: string }>;
@@ -20,17 +22,27 @@ export default async function SupplierProductsPage({ searchParams }: Props) {
     searchParams,
   ]);
   return (
-    <main className="page-shell">
+    <main className="page-shell workspace-page" id="workspace-content">
       <AuthenticatedNavigation actor={actor} />
-      <div className="row">
-        <div>
-          <p className="eyebrow">Supplier catalog</p>
-          <h1>Your products</h1>
-        </div>
-        <Link className="button-link" href="/supplier/products/new">
-          Add product
-        </Link>
-      </div>
+      <PageHeader
+        eyebrow="Supplier inventory"
+        title="Product operations"
+        description="Monitor stock health, listing state, classification, and pricing across your inventory."
+        actions={
+          <Link className="button-link" href="/supplier/products/new">
+            <AppIcon name="add" /> Add product
+          </Link>
+        }
+        meta={
+          <>
+            <span className="context-chip">{products.length} products</span>
+            <span className="context-chip">
+              {products.filter((product) => product.stockQuantity <= 5).length}{" "}
+              need attention
+            </span>
+          </>
+        }
+      />
       {query.error ? (
         <p className="notice error" role="alert">
           {query.error}
@@ -47,46 +59,86 @@ export default async function SupplierProductsPage({ searchParams }: Props) {
           up. The current image is available.
         </p>
       ) : null}
-      <div className="catalog-grid">
-        {products.map((product) => (
-          <article className="product-card" key={product.id}>
-            <ProductImage imageUrl={product.imageUrl} name={product.name} />
-            <div className="row">
-              <span
-                className={`badge ${product.archivedAt ? "badge-archived" : "badge-active"}`}
-              >
-                {product.archivedAt ? "Archived" : "Active"}
-              </span>
-              <span
-                className={
-                  product.stockQuantity <= 5 ? "stock-low" : "stock-healthy"
-                }
-              >
-                {product.stockQuantity} in stock
-              </span>
-            </div>
-            <h2>{product.name}</h2>
-            <p>{product.category.name}</p>
-            <strong>{formatMinorUnits(product.priceMinor)}</strong>
-            <div className="row">
-              <Link
-                className="button-link secondary"
-                href={`/supplier/products/${product.id}/edit`}
-              >
-                Edit product
-              </Link>
-              {!product.archivedAt ? (
-                <form action={archiveProductAction}>
-                  <input name="id" type="hidden" value={product.id} />
-                  <button className="text-button" type="submit">
-                    Archive
-                  </button>
-                </form>
-              ) : null}
-            </div>
-          </article>
-        ))}
-      </div>
+      {products.length ? (
+        <div
+          className="table-scroll inventory-table-wrap"
+          role="region"
+          aria-label="Supplier product inventory"
+          tabIndex={0}
+        >
+          <table className="data-table inventory-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock health</th>
+                <th>Listing</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td>
+                    <div className="inventory-product">
+                      <ProductImage
+                        imageUrl={product.imageUrl}
+                        name={product.name}
+                      />
+                      <strong>{product.name}</strong>
+                    </div>
+                  </td>
+                  <td>{product.category.name}</td>
+                  <td>
+                    <strong>{formatMinorUnits(product.priceMinor)}</strong>
+                  </td>
+                  <td>
+                    <span
+                      className={
+                        product.stockQuantity === 0
+                          ? "stock-unavailable"
+                          : product.stockQuantity <= 5
+                            ? "stock-low"
+                            : "stock-healthy"
+                      }
+                    >
+                      {product.stockQuantity === 0
+                        ? "Out of stock"
+                        : product.stockQuantity + " units"}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge ${product.archivedAt ? "badge-archived" : "badge-active"}`}
+                    >
+                      {product.archivedAt ? "Archived" : "Active"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="category-row-actions">
+                      <Link
+                        className="button-link secondary"
+                        href={`/supplier/products/${product.id}/edit`}
+                      >
+                        Edit product
+                      </Link>
+                      {!product.archivedAt ? (
+                        <form action={archiveProductAction}>
+                          <input name="id" type="hidden" value={product.id} />
+                          <button className="warning-action" type="submit">
+                            Archive
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
       {!products.length ? (
         <div className="panel empty-state">
           <p>No products yet.</p>

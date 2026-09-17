@@ -32,7 +32,7 @@ export default async function CategoriesPage({ searchParams }: Props) {
   );
 
   return (
-    <main className="page-shell">
+    <main className="page-shell workspace-page" id="workspace-content">
       <AuthenticatedNavigation actor={actor} />
       <Link className="back-link" href="/admin">
         ← Back to dashboard

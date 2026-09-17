@@ -4,6 +4,7 @@ export default function AdminLoading() {
       <p className="eyebrow">Admin operations</p>
       <h1>Loading dashboard…</h1>
       <p className="lede">Refreshing inventory and order aggregates.</p>
+      <div className="panel skeleton-panel skeleton-wide" />
       <div className="dashboard-grid">
         <div className="panel skeleton-panel" />
         <div className="panel skeleton-panel" />

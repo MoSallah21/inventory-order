@@ -28,30 +28,33 @@ export default async function ProductDetailPage({ params }: Props) {
     <main className="page-shell narrow">
       <PublicNavigation actor={actor} />
       <Link className="back-link" href="/products">
-        ← Back to products
+        ← Back to catalog
       </Link>
-      <article className="detail-card product-detail">
+      <article className="detail-card product-detail editorial-detail">
         <ProductImage imageUrl={product.imageUrl} name={product.name} />
         <div className="product-detail-content">
           <p className="eyebrow">{product.category.name}</p>
           <h1>{product.name}</h1>
-          <p className="lede">{product.description}</p>
+          <div className="product-price-block">
+            <strong>{product.formattedPrice}</strong>
+            <span
+              className={
+                product.stockQuantity > 5
+                  ? "stock-healthy"
+                  : product.stockQuantity > 0
+                    ? "stock-low"
+                    : "stock-unavailable"
+              }
+            >
+              {product.stockQuantity > 0
+                ? `${product.stockQuantity} in stock`
+                : "Out of stock"}
+            </span>
+          </div>
           <dl>
             <div>
               <dt>Supplier</dt>
               <dd>{product.supplierName}</dd>
-            </div>
-            <div>
-              <dt>Price</dt>
-              <dd>{product.formattedPrice}</dd>
-            </div>
-            <div>
-              <dt>Availability</dt>
-              <dd>
-                {product.stockQuantity > 0
-                  ? `${product.stockQuantity} in stock`
-                  : "Out of stock"}
-              </dd>
             </div>
           </dl>
           <ProductPurchaseAction
@@ -60,6 +63,11 @@ export default async function ProductDetailPage({ params }: Props) {
             stockQuantity={product.stockQuantity}
           />
         </div>
+        <section className="product-description">
+          <p className="eyebrow">Product information</p>
+          <h2>Description</h2>
+          <p>{product.description}</p>
+        </section>
       </article>
     </main>
   );
