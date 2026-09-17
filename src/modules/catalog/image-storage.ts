@@ -110,6 +110,47 @@ export function reportImageCleanupFailure(
   );
 }
 
+type DiagnosticWriter = (line: string) => void;
+
+export function reportImageProviderUploadFailure(
+  error: unknown,
+  write: DiagnosticWriter = (line) => process.stderr.write(line),
+) {
+  let name = "unknown";
+  let httpCode: number | "unknown" = "unknown";
+
+  try {
+    if (typeof error === "object" && error !== null) {
+      const prototype = Object.getPrototypeOf(error);
+      if (prototype === Object.prototype || prototype === null) {
+        const ownValue = (key: string) =>
+          Object.getOwnPropertyDescriptor(error, key)?.value;
+        const candidateName = ownValue("name");
+        if (
+          typeof candidateName === "string" &&
+          /^[A-Za-z0-9_.-]{1,64}$/.test(candidateName)
+        ) {
+          name = candidateName;
+        }
+        const candidateCodes = [ownValue("http_code"), ownValue("httpCode")];
+        const validCode = candidateCodes.find(
+          (candidate) =>
+            Number.isInteger(candidate) &&
+            (candidate as number) >= 100 &&
+            (candidate as number) <= 599,
+        );
+        if (typeof validCode === "number") httpCode = validCode;
+      }
+    }
+  } catch {
+    // Untrusted provider values must not prevent the safe application error.
+  }
+
+  write(
+    `[product-image-provider] operation=upload name=${name} httpCode=${httpCode}\n`,
+  );
+}
+
 export function validateCloudinaryUploadResponse(
   result: UploadApiResponse,
   expectedKey: string,
@@ -171,6 +212,9 @@ export class CloudinaryProductImageStorage implements ProductImageStorage {
     private readonly gateway: CloudinaryGateway = officialCloudinaryGateway,
     private readonly getCredentials: () => CloudinaryCredentials = credentials,
     private readonly cleanupFailureSignal: typeof reportImageCleanupFailure = reportImageCleanupFailure,
+    private readonly uploadFailureSignal: (
+      error: unknown,
+    ) => void = reportImageProviderUploadFailure,
   ) {}
 
   async upload(image: ValidatedProductImage): Promise<StoredProductImage> {
@@ -179,7 +223,12 @@ export class CloudinaryProductImageStorage implements ProductImageStorage {
     let result: UploadApiResponse;
     try {
       result = await this.gateway.upload(image, storageKey, configured);
-    } catch {
+    } catch (error: unknown) {
+      try {
+        this.uploadFailureSignal(error);
+      } catch {
+        // Diagnostics must not change the established upload error contract.
+      }
       throw serviceError();
     }
 

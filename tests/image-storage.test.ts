@@ -4,6 +4,7 @@ import type { UploadApiResponse } from "cloudinary";
 import { AppError } from "@/lib/errors";
 import {
   CloudinaryProductImageStorage,
+  reportImageProviderUploadFailure,
   type CloudinaryGateway,
 } from "@/modules/catalog/image-storage";
 import type { ValidatedProductImage } from "@/modules/catalog/product-image";
@@ -54,6 +55,89 @@ function gatewayWith(
 }
 
 describe("Cloudinary product image adapter", () => {
+  it("emits only normalized metadata for an upload transport failure", async () => {
+    const sensitive = {
+      name: "CloudinaryError",
+      http_code: 503,
+      message: "credential test-secret failed for trusted-cloud",
+      stack: "secret stack",
+      api_key: "test-key",
+      api_secret: "test-secret",
+      signature: "request-signature",
+      bytes: image.bytes,
+      filename: "private.jpg",
+      productId: "product-123",
+      userId: "user-456",
+      response: { body: "provider response" },
+      arbitrary: "must-not-appear",
+    };
+    const gateway: CloudinaryGateway = {
+      async upload() {
+        throw sensitive;
+      },
+      async delete() {
+        return { result: "ok" };
+      },
+    };
+    const lines: string[] = [];
+    const diagnostic = (error: unknown) =>
+      reportImageProviderUploadFailure(error, (line) => lines.push(line));
+
+    await expect(
+      new CloudinaryProductImageStorage(
+        gateway,
+        configured,
+        vi.fn(),
+        diagnostic,
+      ).upload(image),
+    ).rejects.toMatchObject({
+      code: "EXTERNAL_SERVICE_ERROR",
+      message: "Image storage is temporarily unavailable.",
+    });
+    expect(lines).toEqual([
+      "[product-image-provider] operation=upload name=CloudinaryError httpCode=503\n",
+    ]);
+    expect(lines.join(" ")).not.toMatch(
+      /credential|secret|trusted-cloud|test-key|signature|private|product-123|user-456|provider response|arbitrary|\[object Object\]|1/,
+    );
+  });
+
+  it.each([
+    [{ name: "bad name!", http_code: 99 }],
+    [{ name: "x".repeat(65), httpCode: 600 }],
+    [new Error("must remain private")],
+    ["not metadata"],
+  ])("normalizes malformed upload failure metadata to unknown", (error) => {
+    const lines: string[] = [];
+    reportImageProviderUploadFailure(error, (line) => lines.push(line));
+    expect(lines).toEqual([
+      "[product-image-provider] operation=upload name=unknown httpCode=unknown\n",
+    ]);
+  });
+
+  it("accepts the camel-case HTTP code field", () => {
+    const lines: string[] = [];
+    reportImageProviderUploadFailure(
+      { name: "Provider.Error", httpCode: 429 },
+      (line) => lines.push(line),
+    );
+    expect(lines).toEqual([
+      "[product-image-provider] operation=upload name=Provider.Error httpCode=429\n",
+    ]);
+  });
+
+  it("emits no upload failure diagnostic for a successful upload", async () => {
+    const { gateway } = gatewayWith((key) => response(key));
+    const diagnostic = vi.fn();
+    await new CloudinaryProductImageStorage(
+      gateway,
+      configured,
+      vi.fn(),
+      diagnostic,
+    ).upload(image);
+    expect(diagnostic).not.toHaveBeenCalled();
+  });
+
   it("accepts a fully validated response", async () => {
     const { gateway } = gatewayWith((key) => response(key));
     await expect(
@@ -342,10 +426,14 @@ describe("Cloudinary product image adapter", () => {
       "unexpected",
     );
     const signal = vi.fn();
+    const uploadDiagnostic = vi.fn();
     await expect(
-      new CloudinaryProductImageStorage(gateway, configured, signal).upload(
-        image,
-      ),
+      new CloudinaryProductImageStorage(
+        gateway,
+        configured,
+        signal,
+        uploadDiagnostic,
+      ).upload(image),
     ).rejects.toMatchObject({
       code: "EXTERNAL_SERVICE_ERROR",
       message: "Image storage returned an invalid response.",
@@ -355,6 +443,7 @@ describe("Cloudinary product image adapter", () => {
       expect.stringMatching(/^inventory-order\/product-images\//),
       expect.any(AppError),
     );
+    expect(uploadDiagnostic).not.toHaveBeenCalled();
   });
 
   it.each(["ok", "not found"])(
