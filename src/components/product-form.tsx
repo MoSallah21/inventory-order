@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Category, Product } from "@/generated/prisma/client";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
+import { ProductImage } from "@/components/product-presentation";
 
 export function productImageInputName(
   editing: boolean,
@@ -126,9 +127,7 @@ export function ProductForm({ action, categories, product }: Props) {
             }}
           />
         ) : (
-          <div className="product-image product-image-placeholder full">
-            No image
-          </div>
+          <ProductImage className="full" imageUrl={null} name={product.name} />
         )
       ) : null}
       <label className="full">

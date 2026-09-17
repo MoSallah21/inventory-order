@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { AddToCart } from "@/components/add-to-cart";
 import { PublicNavigation } from "@/components/public-navigation";
+import {
+  ProductImage,
+  ProductPurchaseAction,
+  type PurchaseCapability,
+} from "@/components/product-presentation";
+import { Role } from "@/generated/prisma/enums";
 import { parsePage, type QueryValue } from "@/lib/pagination";
+import { getCurrentActor } from "@/modules/auth/authorization";
 import { listPublicProductsPage } from "@/modules/catalog/service";
 
 type Query = Record<string, QueryValue>;
@@ -29,7 +35,16 @@ function productHref(query: Query, page: number) {
 export default async function ProductsPage({ searchParams }: Props) {
   await connection();
   const query = await searchParams;
-  const result = await listPublicProductsPage(query, parsePage(query.page));
+  const [result, actor] = await Promise.all([
+    listPublicProductsPage(query, parsePage(query.page)),
+    getCurrentActor(),
+  ]);
+  const purchaseCapability: PurchaseCapability =
+    actor?.role === Role.CUSTOMER && !actor.disabledAt
+      ? "customer"
+      : actor
+        ? "unavailable"
+        : "anonymous";
   const { products, filters, options } = result;
   const hasFilters = Boolean(
     filters.q ||
@@ -41,7 +56,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   );
   return (
     <main className="page-shell">
-      <PublicNavigation />
+      <PublicNavigation actor={actor} />
       <p className="eyebrow">Public catalog</p>
       <h1>Products</h1>
       <p className="lede">
@@ -124,20 +139,7 @@ export default async function ProductsPage({ searchParams }: Props) {
       <div className="catalog-grid">
         {products.map((product) => (
           <article className="product-card" key={product.id}>
-            <div
-              aria-label={`${product.name} product image`}
-              className={`product-image${product.imageUrl ? "" : " product-image-placeholder"}`}
-              role="img"
-              style={
-                product.imageUrl
-                  ? {
-                      backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
-                    }
-                  : undefined
-              }
-            >
-              {product.imageUrl ? null : "No image"}
-            </div>
+            <ProductImage imageUrl={product.imageUrl} name={product.name} />
             <p className="eyebrow">{product.category.name}</p>
             <h2>
               <Link href={`/products/${product.id}`}>{product.name}</Link>
@@ -152,13 +154,11 @@ export default async function ProductsPage({ searchParams }: Props) {
                   : "Out of stock"}
               </span>
             </div>
-            {product.stockQuantity > 0 ? (
-              <AddToCart disabled={false} productId={product.id} />
-            ) : (
-              <p className="stock-unavailable">
-                Out of stock — unavailable to add
-              </p>
-            )}
+            <ProductPurchaseAction
+              capability={purchaseCapability}
+              productId={product.id}
+              stockQuantity={product.stockQuantity}
+            />
           </article>
         ))}
       </div>

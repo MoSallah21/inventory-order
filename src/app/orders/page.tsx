@@ -34,20 +34,22 @@ export default async function OrdersPage({ searchParams }: Props) {
   return (
     <main className="page-shell">
       <AuthenticatedNavigation actor={actor} />
-      <p className="eyebrow">{actor.role.toLowerCase()} orders</p>
-      <h1>Orders</h1>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">{actor.role.toLowerCase()} orders</p>
+          <h1>Orders</h1>
+        </div>
+        {actor.role === Role.ADMIN ? (
+          <Link className="button-link secondary" href="/orders/export">
+            Export orders CSV
+          </Link>
+        ) : null}
+      </div>
       <p className="lede">
         {actor.role === Role.CUSTOMER
           ? "Track purchases and review their current status."
           : "Review orders and take the next allowed fulfillment action."}
       </p>
-      {actor.role === Role.ADMIN ? (
-        <p>
-          <Link className="button-link secondary" href="/orders/export">
-            Export orders CSV
-          </Link>
-        </p>
-      ) : null}
       {query.placed ? (
         <p className="notice success" role="status">
           Order placed successfully. Its current status is shown below.

@@ -27,7 +27,12 @@ export default async function AdminPage() {
         {dashboard.lowStockProducts.length === 0 ? (
           <p className="empty">No active products are low on stock.</p>
         ) : (
-          <div className="table-scroll">
+          <div
+            aria-label="Low-stock products table"
+            className="table-scroll"
+            role="region"
+            tabIndex={0}
+          >
             <table className="data-table">
               <thead>
                 <tr>
@@ -68,7 +73,12 @@ export default async function AdminPage() {
             Supplier orders are counted separately; cancelled orders are
             excluded.
           </p>
-          <div className="table-scroll">
+          <div
+            aria-label="Orders per day table"
+            className="table-scroll"
+            role="region"
+            tabIndex={0}
+          >
             <table className="data-table">
               <thead>
                 <tr>
@@ -98,7 +108,12 @@ export default async function AdminPage() {
           {dashboard.revenuePerSupplier.length === 0 ? (
             <p className="empty">No delivered-order revenue is available.</p>
           ) : (
-            <div className="table-scroll">
+            <div
+              aria-label="Revenue per supplier table"
+              className="table-scroll"
+              role="region"
+              tabIndex={0}
+            >
               <table className="data-table">
                 <thead>
                   <tr>

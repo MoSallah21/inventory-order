@@ -1,33 +1,37 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublicProduct } from "@/modules/catalog/service";
-import { AddToCart } from "@/components/add-to-cart";
 import { PublicNavigation } from "@/components/public-navigation";
+import {
+  ProductImage,
+  ProductPurchaseAction,
+  type PurchaseCapability,
+} from "@/components/product-presentation";
+import { Role } from "@/generated/prisma/enums";
+import { getCurrentActor } from "@/modules/auth/authorization";
 
 type Props = { params: Promise<{ productId: string }> };
 export default async function ProductDetailPage({ params }: Props) {
   const { productId } = await params;
-  const product = await getPublicProduct(productId);
+  const [product, actor] = await Promise.all([
+    getPublicProduct(productId),
+    getCurrentActor(),
+  ]);
   if (!product) notFound();
+  const purchaseCapability: PurchaseCapability =
+    actor?.role === Role.CUSTOMER && !actor.disabledAt
+      ? "customer"
+      : actor
+        ? "unavailable"
+        : "anonymous";
   return (
     <main className="page-shell narrow">
-      <PublicNavigation />
+      <PublicNavigation actor={actor} />
       <Link className="back-link" href="/products">
         ← Back to products
       </Link>
       <article className="detail-card">
-        <div
-          aria-label={`${product.name} product image`}
-          className={`product-image${product.imageUrl ? "" : " product-image-placeholder"}`}
-          role="img"
-          style={
-            product.imageUrl
-              ? { backgroundImage: `url(${JSON.stringify(product.imageUrl)})` }
-              : undefined
-          }
-        >
-          {product.imageUrl ? null : "No image"}
-        </div>
+        <ProductImage imageUrl={product.imageUrl} name={product.name} />
         <p className="eyebrow">{product.category.name}</p>
         <h1>{product.name}</h1>
         <p className="lede">{product.description}</p>
@@ -49,11 +53,11 @@ export default async function ProductDetailPage({ params }: Props) {
             </dd>
           </div>
         </dl>
-        {product.stockQuantity > 0 ? (
-          <AddToCart disabled={false} productId={product.id} />
-        ) : (
-          <p className="stock-unavailable">Out of stock — unavailable to add</p>
-        )}
+        <ProductPurchaseAction
+          capability={purchaseCapability}
+          productId={product.id}
+          stockQuantity={product.stockQuantity}
+        />
       </article>
     </main>
   );

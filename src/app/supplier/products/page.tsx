@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
+import { ProductImage } from "@/components/product-presentation";
 import { Role } from "@/generated/prisma/enums";
 import { formatMinorUnits } from "@/lib/money";
 import { requireProtectedPage } from "@/modules/auth/page-authorization";
@@ -49,20 +50,7 @@ export default async function SupplierProductsPage({ searchParams }: Props) {
       <div className="catalog-grid">
         {products.map((product) => (
           <article className="product-card" key={product.id}>
-            <div
-              aria-label={`${product.name} product image`}
-              className={`product-image${product.imageUrl ? "" : " product-image-placeholder"}`}
-              role="img"
-              style={
-                product.imageUrl
-                  ? {
-                      backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
-                    }
-                  : undefined
-              }
-            >
-              {product.imageUrl ? null : "No image"}
-            </div>
+            <ProductImage imageUrl={product.imageUrl} name={product.name} />
             <div className="row">
               <span className="badge">
                 {product.archivedAt ? "Archived" : "Active"}
