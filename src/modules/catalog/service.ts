@@ -4,6 +4,13 @@ import { prisma } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { formatMinorUnits } from "@/lib/money";
 import {
+  clampPage,
+  PAGE_SIZE,
+  pageCount,
+  singleQueryValue,
+  type QueryValue,
+} from "@/lib/pagination";
+import {
   assertActorRole,
   assertAuthenticatedActor,
   type Actor,
@@ -21,6 +28,28 @@ const CATEGORY_NAME_MAX = 80;
 const PRODUCT_NAME_MAX = 120;
 const PRODUCT_DESCRIPTION_MAX = 2_000;
 const PRICE_MAX_MINOR = 999_999_999n;
+const SEARCH_MAX = 120;
+
+export type PublicProductQuery = {
+  q?: QueryValue;
+  category?: QueryValue;
+  supplier?: QueryValue;
+  minPrice?: QueryValue;
+  maxPrice?: QueryValue;
+  inStock?: QueryValue;
+};
+
+export type PublicProductFilters = {
+  q: string;
+  category: string;
+  supplier: string;
+  minPrice: string;
+  maxPrice: string;
+  inStock: boolean;
+  minPriceMinor?: bigint;
+  maxPriceMinor?: bigint;
+  error?: string;
+};
 
 export type CategoryInput = {
   name: string;
@@ -86,6 +115,50 @@ export function parseAedPrice(value: string): bigint {
     validationError("price", "Price is above the supported maximum.");
   }
   return amount;
+}
+
+function parseFilterPrice(value: QueryValue) {
+  const raw = singleQueryValue(value)?.trim() ?? "";
+  if (!raw) return { raw: "" };
+  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(raw)) {
+    return {
+      raw: "",
+      error:
+        "Enter prices as non-negative AED amounts with up to two decimals.",
+    };
+  }
+  const [major, fraction = ""] = raw.split(".");
+  const minor = BigInt(major) * 100n + BigInt(fraction.padEnd(2, "0"));
+  if (minor > PRICE_MAX_MINOR) {
+    return {
+      raw: "",
+      error: "The selected price is above the supported maximum.",
+    };
+  }
+  return { raw, minor };
+}
+
+export function parsePublicProductFilters(
+  query: PublicProductQuery,
+): PublicProductFilters {
+  const qValue = singleQueryValue(query.q)?.trim().replace(/\s+/g, " ") ?? "";
+  const min = parseFilterPrice(query.minPrice);
+  const max = parseFilterPrice(query.maxPrice);
+  const minMaxError =
+    min.minor !== undefined && max.minor !== undefined && min.minor > max.minor
+      ? "Minimum price cannot exceed maximum price."
+      : undefined;
+  return {
+    q: qValue.slice(0, SEARCH_MAX),
+    category: singleQueryValue(query.category)?.trim() ?? "",
+    supplier: singleQueryValue(query.supplier)?.trim() ?? "",
+    minPrice: min.raw,
+    maxPrice: max.raw,
+    inStock: singleQueryValue(query.inStock) === "true",
+    minPriceMinor: min.minor,
+    maxPriceMinor: max.minor,
+    error: min.error ?? max.error ?? minMaxError,
+  };
 }
 
 function normalizeProductInput(input: ProductInput) {
@@ -570,6 +643,76 @@ export async function listPublicProducts() {
     orderBy: { createdAt: "desc" },
   });
   return products.map(toPublicProduct);
+}
+
+export async function listPublicProductOptions() {
+  const [categories, suppliers] = await Promise.all([
+    prisma.category.findMany({
+      where: { archivedAt: null, products: { some: publicWhere } },
+      select: { name: true, slug: true },
+      orderBy: [{ name: "asc" }, { slug: "asc" }],
+    }),
+    prisma.user.findMany({
+      where: {
+        role: Role.SUPPLIER,
+        disabledAt: null,
+        products: { some: publicWhere },
+      },
+      select: { id: true, name: true },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+    }),
+  ]);
+  return { categories, suppliers };
+}
+
+export async function listPublicProductsPage(
+  query: PublicProductQuery,
+  requestedPage: number,
+) {
+  const filters = parsePublicProductFilters(query);
+  const where: Prisma.ProductWhereInput = {
+    ...publicWhere,
+    ...(filters.q
+      ? { name: { contains: filters.q, mode: "insensitive" } }
+      : {}),
+    ...(filters.category
+      ? { category: { archivedAt: null, slug: filters.category } }
+      : {}),
+    ...(filters.supplier ? { supplierId: filters.supplier } : {}),
+    ...(filters.inStock ? { stockQuantity: { gt: 0 } } : {}),
+    ...(!filters.error &&
+    (filters.minPriceMinor !== undefined || filters.maxPriceMinor !== undefined)
+      ? {
+          priceMinor: {
+            gte: filters.minPriceMinor,
+            lte: filters.maxPriceMinor,
+          },
+        }
+      : {}),
+  };
+  const [totalCount, options] = await Promise.all([
+    filters.error ? Promise.resolve(0) : prisma.product.count({ where }),
+    listPublicProductOptions(),
+  ]);
+  const page = clampPage(requestedPage, totalCount);
+  const rows = filters.error
+    ? []
+    : await prisma.product.findMany({
+        where,
+        select: publicProductSelect,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      });
+  return {
+    products: rows.map(toPublicProduct),
+    filters,
+    options,
+    page,
+    pageCount: pageCount(totalCount),
+    totalCount,
+    pageSize: PAGE_SIZE,
+  };
 }
 
 export async function getPublicProduct(id: string) {

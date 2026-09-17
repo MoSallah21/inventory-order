@@ -4,11 +4,14 @@ import { connection } from "next/server";
 import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
 import { OrderStatusBadge } from "@/components/order-status";
 import { Role } from "@/generated/prisma/enums";
+import { parsePage, type QueryValue } from "@/lib/pagination";
 import { requireProtectedPage } from "@/modules/auth/page-authorization";
-import { listOrders } from "@/modules/orders/service";
+import { listOrdersPage } from "@/modules/orders/service";
 import { formatOrderDate } from "@/modules/orders/presentation";
 
-type Props = { searchParams: Promise<{ placed?: string }> };
+type Props = {
+  searchParams: Promise<{ placed?: QueryValue; page?: QueryValue }>;
+};
 
 export default async function OrdersPage({ searchParams }: Props) {
   await connection();
@@ -17,7 +20,17 @@ export default async function OrdersPage({ searchParams }: Props) {
     Role.SUPPLIER,
     Role.CUSTOMER,
   );
-  const [orders, query] = await Promise.all([listOrders(actor), searchParams]);
+  const query = await searchParams;
+  const result = await listOrdersPage(actor, parsePage(query.page));
+  const { orders } = result;
+  const pageHref = (page: number) => {
+    const params = new URLSearchParams();
+    if (typeof query.placed === "string" && query.placed)
+      params.set("placed", query.placed);
+    if (page > 1) params.set("page", String(page));
+    const suffix = params.toString();
+    return suffix ? `/orders?${suffix}` : "/orders";
+  };
   return (
     <main className="page-shell">
       <AuthenticatedNavigation actor={actor} />
@@ -28,11 +41,41 @@ export default async function OrdersPage({ searchParams }: Props) {
           ? "Track purchases and review their current status."
           : "Review orders and take the next allowed fulfillment action."}
       </p>
+      {actor.role === Role.ADMIN ? (
+        <p>
+          <Link className="button-link secondary" href="/orders/export">
+            Export orders CSV
+          </Link>
+        </p>
+      ) : null}
       {query.placed ? (
         <p className="notice success" role="status">
           Order placed successfully. Its current status is shown below.
         </p>
       ) : null}
+      <nav aria-label="Order pages" className="pagination">
+        <span>
+          Page {result.page} of {result.pageCount} · {result.totalCount} orders
+        </span>
+        <div>
+          {result.page > 1 ? (
+            <Link
+              className="button-link secondary"
+              href={pageHref(result.page - 1)}
+            >
+              Previous
+            </Link>
+          ) : null}
+          {result.page < result.pageCount ? (
+            <Link
+              className="button-link secondary"
+              href={pageHref(result.page + 1)}
+            >
+              Next
+            </Link>
+          ) : null}
+        </div>
+      </nav>
       <div className="stack">
         {orders.map((order) => (
           <article className="panel order-card" key={order.id}>

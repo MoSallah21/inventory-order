@@ -7,6 +7,7 @@ import {
   formatMinorUnits,
   multiplyMinorUnits,
 } from "@/lib/money";
+import { clampPage, PAGE_SIZE, pageCount } from "@/lib/pagination";
 import {
   assertAuthenticatedActor,
   type Actor,
@@ -392,6 +393,61 @@ export async function listOrders(actor: Actor) {
     orderBy: { createdAt: "desc" },
   });
   return rows.map(dto);
+}
+
+export async function listOrdersPage(actor: Actor, requestedPage: number) {
+  const current = await currentReadActor(actor);
+  const where = orderScope(current);
+  const totalCount = await prisma.order.count({ where });
+  const page = clampPage(requestedPage, totalCount);
+  const rows = await prisma.order.findMany({
+    where,
+    select: orderSelect,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  });
+  return {
+    orders: rows.map(dto),
+    page,
+    pageCount: pageCount(totalCount),
+    totalCount,
+    pageSize: PAGE_SIZE,
+  };
+}
+
+const exportOrderSelect = {
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  currency: true,
+  totalMinor: true,
+  customer: { select: { name: true, email: true } },
+  supplier: { select: { name: true } },
+} satisfies Prisma.OrderSelect;
+
+export async function listAdminOrderExportRows(actor: Actor) {
+  const current = await currentReadActor(actor);
+  if (current.role !== Role.ADMIN) {
+    throw new AppError("FORBIDDEN", "Only administrators can export orders.");
+  }
+  const rows = await prisma.order.findMany({
+    select: exportOrderSelect,
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+  return rows.map((order) => ({
+    orderId: order.id,
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
+    customerName: order.customer.name,
+    customerEmail: order.customer.email,
+    supplierName: order.supplier.name,
+    status: order.status,
+    currency: order.currency,
+    totalMinor: order.totalMinor.toString(),
+    humanReadableTotal: formatMinorUnits(order.totalMinor, order.currency),
+  }));
 }
 
 export async function getOrder(actor: Actor, id: string) {

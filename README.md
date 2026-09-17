@@ -18,10 +18,11 @@ Implemented:
 - Admin category management at `/admin/categories`.
 - Supplier product management at `/supplier/products`.
 - Server-rendered public catalog at `/products`.
+- Public product search/filtering, fixed-size product and role-scoped order pagination, and authorized admin order CSV export.
 - Unit and isolated PostgreSQL integration tests.
 - Browser-local cart, atomic multi-supplier checkout, durable idempotency, and role-scoped order history/workflows.
 
-Not implemented yet: search, pagination, notifications, exports, caching, and rate limiting.
+Not implemented yet: notifications, caching, and rate limiting.
 
 ## Admin dashboard definitions
 

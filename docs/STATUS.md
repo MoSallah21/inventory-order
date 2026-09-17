@@ -26,6 +26,16 @@
 - Managed Cloudinary supplier product upload, replacement, removal, compensation, and retained-on-archive lifecycle.
 - Role-aware application shell, deterministic return paths, readable order statuses/actions, and role-specific empty
   states across the evaluator journeys.
+- Public product search/filtering, fixed-size product and role-scoped order pagination, and authorized admin order CSV
+  export with production-path PostgreSQL, route, serializer, and rendered-page verification.
+
+## Bonus phase verification
+
+The completed bonus phase is covered by 20 focused production-path tests across four files. They exercise real
+PostgreSQL product filtering/options and order pagination, database-reloaded role isolation, the real CSV service and
+route, exact persisted `BigInt` totals, RFC/formula-safe CSV output, and rendered product/order page navigation and
+export visibility. The complete automated suite passes 387/387 tests across 30 files with exact-ID cleanup and the
+preserved demo data unchanged.
 
 ## Functional UX stabilization
 

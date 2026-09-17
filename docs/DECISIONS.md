@@ -144,3 +144,9 @@ Generate daily keys from a UTC date plus integer offsets rather than adding one-
 Interpret both stored order timestamps and half-open boundaries explicitly as UTC, avoiding session-timezone coercion.
 Keep delivered historical revenue visible when a supplier is later disabled; disablement governs current participation,
 not historical recognition.
+
+# Bonus phase: catalog queries, pagination, and CSV export
+
+- Public products and each role-scoped order listing use server-side offset pagination with a fixed page size of 10 and a unique `id` ordering tie-breaker.
+- The admin CSV export intentionally exports all current assessment-sized order data in one response. Large-scale streaming exports and background export jobs are deferred.
+- CSV output uses immutable persisted order totals, exact decimal strings for `BigInt` minor units, a fixed column allow-list, RFC-style quoting, and spreadsheet-formula neutralization.
