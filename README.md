@@ -16,6 +16,38 @@ All demo accounts use the password `DemoPass!2026`.
 - Supplier: `supplier1@example.test`
 - Customer: `customer@example.test`
 
+## Application preview
+
+### Admin operations dashboard
+
+The Admin workspace provides low-stock visibility, seven-day order activity, supplier revenue grouped by currency, and direct access to operational management.
+
+![Admin operations dashboard](docs/screenshots/admin-dashboard.jpeg)
+
+### Public product catalog
+
+The public catalog supports product search, category and supplier filtering, price ranges, stock availability, and responsive pagination.
+
+![Public product catalog](docs/screenshots/product-catalog.jpeg)
+
+### Supplier inventory workspace
+
+Suppliers manage their authorized product inventory, stock levels, pricing, lifecycle state, and product details from a dedicated workspace.
+
+![Supplier inventory workspace](docs/screenshots/supplier-inventory.jpeg)
+
+### Customer cart and checkout
+
+Customers can review product quantities, supplier details, line totals, currency-separated totals, stock warnings, and checkout actions.
+
+![Customer cart and checkout](docs/screenshots/customer-cart.jpeg)
+
+### Order workflow
+
+Role-authorized order details expose status progression, counterparties, immutable totals, item snapshots, cancellation rules, and terminal-state explanations.
+
+![Order workflow](docs/screenshots/order-details.jpeg)
+
 ## Status
 
 Implemented:
