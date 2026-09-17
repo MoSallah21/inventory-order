@@ -32,10 +32,16 @@ export default async function EditProductPage({ params, searchParams }: Props) {
   return (
     <main className="page-shell narrow">
       <AuthenticatedNavigation actor={actor} />
-      <Link href="/supplier/products">← Products</Link>
+      <Link className="back-link" href="/supplier/products">
+        ← Back to products
+      </Link>
       <p className="eyebrow">Supplier catalog</p>
       <h1>Edit product</h1>
-      {query.error ? <p className="notice error">{query.error}</p> : null}
+      {query.error ? (
+        <p className="notice error" role="alert">
+          {query.error}
+        </p>
+      ) : null}
       <section className="panel">
         <ProductForm
           action={updateProductAction}

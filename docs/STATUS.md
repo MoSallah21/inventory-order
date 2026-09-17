@@ -24,6 +24,29 @@
 - Scoped customer/supplier/admin order DTOs, explicit transitions, and exactly-once cancellation restoration.
 - Database-authoritative admin dashboard with low-stock, seven-day order activity, and delivered revenue aggregates.
 - Managed Cloudinary supplier product upload, replacement, removal, compensation, and retained-on-archive lifecycle.
+- Role-aware application shell, deterministic return paths, readable order statuses/actions, and role-specific empty
+  states across the evaluator journeys.
+
+## Functional UX stabilization
+
+The verified route map and issue-level audit are recorded in `docs/UX_ROUTE_AUDIT.md`. Customer cart access is now
+protected, public catalog pages retain a contextual route back to the authenticated workspace, order actions appear
+beside the current status before line items, and successful checkout clears browser cart state before deterministic
+replacement navigation to `/orders?placed=1`. Supplier product forms explicitly separate basic information, price and
+inventory, category, and image choices. Cosmetic animation, dense dashboard redesign, pagination, and a large component
+library remain intentionally deferred.
+
+The final automated suite passes 356/356 tests across 23 files. The 2026-09-17 browser journey used the real local app
+and seeded accounts. It verified customer catalog/detail/cart/quantity/checkout, a pending cancellation and restored
+stock message; supplier overview/orders, Pending → Confirmed → Shipped → Delivered, terminal action removal, and a
+product save with no replacement image; admin dashboard/categories/orders and deterministic returns; and anonymous
+catalog access plus protected-order redirect to sign-in. This is manual browser verification, not an automated E2E
+suite.
+
+Canonical seeded stock is `0 / 3 / 120`. Current local smoke stock is `0 / 2 / 118`: the earlier preserved demo orders
+account for `0 / 2 / 119`, and this journey preserved one new delivered Safety Gloves order that consumed one further
+unit. The journey also preserved a separate cancelled two-unit Safety Gloves order whose cancellation restored its
+stock. Test-owned User, Product, and Order record counts are all zero.
 
 ## Verification record
 

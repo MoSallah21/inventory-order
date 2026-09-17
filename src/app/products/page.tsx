@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { AddToCart } from "@/components/add-to-cart";
+import { PublicNavigation } from "@/components/public-navigation";
 import { listPublicProducts } from "@/modules/catalog/service";
 
 export default async function ProductsPage() {
@@ -8,14 +9,7 @@ export default async function ProductsPage() {
   const products = await listPublicProducts();
   return (
     <main className="page-shell">
-      <nav className="top-nav">
-        <Link href="/">Home</Link>
-        <span className="action-row">
-          <Link href="/cart">Cart</Link>
-          <Link href="/orders">Orders</Link>
-          <Link href="/sign-in">Sign in</Link>
-        </span>
-      </nav>
+      <PublicNavigation />
       <p className="eyebrow">Public catalog</p>
       <h1>Products</h1>
       <p className="lede">
@@ -52,15 +46,21 @@ export default async function ProductsPage() {
                   : "Out of stock"}
               </span>
             </div>
-            <AddToCart
-              disabled={product.stockQuantity === 0}
-              productId={product.id}
-            />
+            {product.stockQuantity > 0 ? (
+              <AddToCart disabled={false} productId={product.id} />
+            ) : (
+              <p className="stock-unavailable">
+                Out of stock — unavailable to add
+              </p>
+            )}
           </article>
         ))}
       </div>
       {!products.length ? (
-        <p className="empty">No products are currently available.</p>
+        <div className="panel empty-state">
+          <p>No products are currently available.</p>
+          <Link href="/">Return home</Link>
+        </div>
       ) : null}
     </main>
   );

@@ -2,6 +2,7 @@ import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
 import { Role } from "@/generated/prisma/enums";
 import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { listCategories } from "@/modules/catalog/service";
+import Link from "next/link";
 
 import {
   archiveCategoryAction,
@@ -21,14 +22,23 @@ export default async function CategoriesPage({ searchParams }: Props) {
   return (
     <main className="page-shell">
       <AuthenticatedNavigation actor={actor} />
+      <Link className="back-link" href="/admin">
+        ← Back to dashboard
+      </Link>
       <p className="eyebrow">Admin catalog</p>
       <h1>Categories</h1>
       <p className="lede">
         Create, edit, and archive the categories suppliers can use.
       </p>
-      {query.error ? <p className="notice error">{query.error}</p> : null}
+      {query.error ? (
+        <p className="notice error" role="alert">
+          {query.error}
+        </p>
+      ) : null}
       {query.saved ? (
-        <p className="notice success">Category changes saved.</p>
+        <p className="notice success" role="status">
+          Category changes saved.
+        </p>
       ) : null}
 
       <section className="panel">

@@ -12,6 +12,7 @@ const protectedPages = [
   "src/app/supplier/products/new/page.tsx",
   "src/app/supplier/products/[id]/edit/page.tsx",
   "src/app/account/page.tsx",
+  "src/app/cart/page.tsx",
   "src/app/orders/page.tsx",
   "src/app/orders/[orderId]/page.tsx",
 ];

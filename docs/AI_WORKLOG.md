@@ -169,3 +169,22 @@ No category UI, product CRUD, uploads, cart, checkout, order workflow, dashboard
   testing boundary, not a claim of automated E2E coverage.
 - The full automated suite remains 348/348 across 22 files. Canonical seeded stock remains `0 / 3 / 120`; current local
   stock remains `0 / 2 / 119` because preserved manual demo orders consumed stock.
+
+# 2026-09-17 — Functional UX and information architecture stabilization
+
+- Audited every actual App Router page and link; recorded the route matrix and confirmed root causes in
+  `docs/UX_ROUTE_AUDIT.md`.
+- Added a consistent role-labeled authenticated shell and contextual public header without changing server-side role
+  authorization.
+- Protected the customer cart, added explicit structural return paths, and made successful checkout navigate to the
+  refreshed customer order list.
+- Centralized readable order status/action presentation, moved allowed actions above item details, added pending
+  protection, terminal-state explanations, updated timestamps, and richer role-appropriate list rows.
+- Added recovery-oriented empty states, accessible notice semantics, keyboard focus styling, responsive layouts,
+  product-detail cart access, supplier product imagery, and clearer product/image form choices.
+- Added focused functional UX contract tests. Final verification and manual journey results follow below.
+- Verification passed Prettier, TypeScript, ESLint, Prisma validation/migration status, 356 tests across 23 files, and
+  the 15-route webpack production build. The default Turbopack build hit only the known sandbox port-binding failure.
+- Manual browser verification completed all four role journeys. It preserved smoke orders
+  `cmu52m55y00013xsb1va6v7or` (Cancelled, stock restored) and `cmu52n6o900063xsbtw9kc69y` (Delivered). Current demo
+  stock is `0 / 2 / 118`, distinct from canonical seed `0 / 3 / 120`; test-owned records are zero.

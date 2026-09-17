@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Category, Product } from "@/generated/prisma/client";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -58,6 +59,7 @@ export function ProductForm({ action, categories, product }: Props) {
       }}
     >
       {product ? <input name="id" type="hidden" value={product.id} /> : null}
+      <h2 className="form-section-title full">Basic information</h2>
       <label>
         Name
         <input
@@ -67,17 +69,17 @@ export function ProductForm({ action, categories, product }: Props) {
           required
         />
       </label>
-      <label>
-        Category
-        <select defaultValue={product?.categoryId} name="categoryId" required>
-          <option value="">Select a category</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+      <label className="full">
+        Description
+        <textarea
+          defaultValue={product?.description}
+          maxLength={2000}
+          name="description"
+          required
+          rows={6}
+        />
       </label>
+      <h2 className="form-section-title full">Price and inventory</h2>
       <label>
         AED price
         <input
@@ -100,6 +102,19 @@ export function ProductForm({ action, categories, product }: Props) {
           type="number"
         />
       </label>
+      <h2 className="form-section-title full">Category</h2>
+      <label className="full">
+        Category
+        <select defaultValue={product?.categoryId} name="categoryId" required>
+          <option value="">Select a category</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <h2 className="form-section-title full">Product image</h2>
       {product ? (
         product.imageUrl ? (
           <div
@@ -134,20 +149,21 @@ export function ProductForm({ action, categories, product }: Props) {
       </p>
       {product ? (
         <label className="checkbox-row full">
-          <input name="removeImage" type="checkbox" /> Remove current image
+          <input name="removeImage" type="checkbox" /> Remove current image when
+          saving
         </label>
       ) : null}
-      <label className="full">
-        Description
-        <textarea
-          defaultValue={product?.description}
-          maxLength={2000}
-          name="description"
-          required
-          rows={6}
-        />
-      </label>
-      <SubmitButton editing={editing} />
+      {product ? (
+        <p className="hint full">
+          Leave the file field empty to keep the current image.
+        </p>
+      ) : null}
+      <div className="action-row full">
+        <SubmitButton editing={editing} />
+        <Link className="button-link secondary" href="/supplier/products">
+          Cancel
+        </Link>
+      </div>
     </form>
   );
 }

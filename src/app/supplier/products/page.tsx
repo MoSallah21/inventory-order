@@ -30,9 +30,15 @@ export default async function SupplierProductsPage({ searchParams }: Props) {
           Add product
         </Link>
       </div>
-      {query.error ? <p className="notice error">{query.error}</p> : null}
+      {query.error ? (
+        <p className="notice error" role="alert">
+          {query.error}
+        </p>
+      ) : null}
       {query.saved ? (
-        <p className="notice success">Product changes saved.</p>
+        <p className="notice success" role="status">
+          Product changes saved.
+        </p>
       ) : null}
       {query.warning === "image-cleanup" ? (
         <p className="notice error">
@@ -43,6 +49,20 @@ export default async function SupplierProductsPage({ searchParams }: Props) {
       <div className="catalog-grid">
         {products.map((product) => (
           <article className="product-card" key={product.id}>
+            <div
+              aria-label={`${product.name} product image`}
+              className={`product-image${product.imageUrl ? "" : " product-image-placeholder"}`}
+              role="img"
+              style={
+                product.imageUrl
+                  ? {
+                      backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
+                    }
+                  : undefined
+              }
+            >
+              {product.imageUrl ? null : "No image"}
+            </div>
             <div className="row">
               <span className="badge">
                 {product.archivedAt ? "Archived" : "Active"}
@@ -66,7 +86,14 @@ export default async function SupplierProductsPage({ searchParams }: Props) {
           </article>
         ))}
       </div>
-      {!products.length ? <p className="empty">No products yet.</p> : null}
+      {!products.length ? (
+        <div className="panel empty-state">
+          <p>No products yet.</p>
+          <Link className="button-link" href="/supplier/products/new">
+            Add product
+          </Link>
+        </div>
+      ) : null}
     </main>
   );
 }

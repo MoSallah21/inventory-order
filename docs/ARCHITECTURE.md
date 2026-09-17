@@ -36,6 +36,12 @@ password recovery, and external providers are disabled or absent.
 missing and disabled actors. `requireRole` applies server-side role authorization. Protected pages call these helpers
 inside their server components; client visibility is not treated as authorization.
 
+Authenticated pages share a role-aware application header that presents the application name, database-authoritative
+actor name and role, a workspace label, role-specific navigation, and sign out. Admin, Supplier, and Customer links are
+defined as separate allow-lists. Public catalog pages resolve the actor only to offer a contextual return to that
+actor's workspace; they do not use client state as an authorization boundary. Detail and edit pages use structural
+links to deterministic parent routes rather than browser history.
+
 ## Catalog module
 
 `src/modules/catalog/service.ts` owns category and product rules. Server actions reload the database-backed actor, then

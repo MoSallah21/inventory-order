@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { placeOrderAction, type CheckoutState } from "@/app/orders/actions";
 import { readCart, saveCart, type CartRecord } from "@/components/add-to-cart";
@@ -18,11 +19,14 @@ type Product = {
   priceMinor: string;
   currency: string;
   stockQuantity: number;
+  supplierName: string;
+  imageUrl: string | null;
 };
 
 const initialState: CheckoutState = {};
 
 export function Cart({ products }: { products: Product[] }) {
+  const router = useRouter();
   const [cart, setCart] = useState<CartRecord>({});
   const [key, setKey] = useState("");
   const [state, action, pending] = useActionState(
@@ -39,8 +43,10 @@ export function Cart({ products }: { products: Product[] }) {
   useEffect(() => {
     if (shouldClearCart(state.success)) {
       saveCart({});
+      router.replace("/orders?placed=1");
+      router.refresh();
     }
-  }, [state.success]);
+  }, [router, state.success]);
   const selected = useMemo(
     () => (state.success ? [] : products.filter((product) => cart[product.id])),
     [cart, products, state.success],
@@ -67,9 +73,24 @@ export function Cart({ products }: { products: Product[] }) {
     <form action={action} className="stack">
       <input name="idempotencyKey" type="hidden" value={key} />
       {selected.map((product) => (
-        <article className="panel row" key={product.id}>
+        <article className="panel cart-line" key={product.id}>
+          <div
+            aria-label={`${product.name} product image`}
+            className={`cart-image${product.imageUrl ? "" : " product-image-placeholder"}`}
+            role="img"
+            style={
+              product.imageUrl
+                ? {
+                    backgroundImage: `url(${JSON.stringify(product.imageUrl)})`,
+                  }
+                : undefined
+            }
+          >
+            {product.imageUrl ? null : "No image"}
+          </div>
           <div>
             <strong>{product.name}</strong>
+            <p>Supplier: {product.supplierName}</p>
             <p>{product.formattedPrice} each</p>
           </div>
           <input name="productId" type="hidden" value={product.id} />
@@ -102,11 +123,8 @@ export function Cart({ products }: { products: Product[] }) {
         </p>
       ) : null}
       {state.error ? (
-        <p className="notice error">{state.error.message}</p>
-      ) : null}
-      {state.success ? (
-        <p className="notice success">
-          Order placed. <Link href="/orders">View your orders</Link>.
+        <p className="notice error" role="alert">
+          {state.error.message}
         </p>
       ) : null}
       {selected.length ? (

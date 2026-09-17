@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 const CART_KEY = "inventory-order-cart-v1";
@@ -31,14 +32,16 @@ export function AddToCart({
     const cart = readCart();
     cart[productId] = Math.min((cart[productId] ?? 0) + 1, 10_000);
     saveCart(cart);
-    setMessage("Added");
+    setMessage("Added to cart");
   }
   return (
     <span className="cart-control">
       <button disabled={disabled} onClick={add} type="button">
         Add to cart
       </button>
-      <span aria-live="polite">{message}</span>
+      <span aria-live="polite">
+        {message} {message ? <Link href="/cart">View cart</Link> : null}
+      </span>
     </span>
   );
 }

@@ -1,8 +1,14 @@
-import { transitionOrderAction } from "@/app/orders/actions";
 import { AuthenticatedNavigation } from "@/components/authenticated-navigation";
+import { OrderActionForm } from "@/components/order-action-form";
+import { OrderStatusBadge } from "@/components/order-status";
+import Link from "next/link";
 import { Role } from "@/generated/prisma/enums";
 import { requireProtectedPage } from "@/modules/auth/page-authorization";
 import { allowedTargets, getOrder } from "@/modules/orders/service";
+import {
+  formatOrderDate,
+  orderStateMessage,
+} from "@/modules/orders/presentation";
 
 export default async function OrderPage({
   params,
@@ -20,18 +26,65 @@ export default async function OrderPage({
   );
   const order = await getOrder(actor, orderId);
   const targets = allowedTargets(actor.role, order.status);
+  const lastUpdated =
+    order.cancelledAt ??
+    order.deliveredAt ??
+    order.shippedAt ??
+    order.confirmedAt ??
+    order.createdAt;
   return (
     <main className="page-shell narrow">
       <AuthenticatedNavigation actor={actor} />
+      <Link className="back-link" href="/orders">
+        ← Back to orders
+      </Link>
       <p className="eyebrow">Order detail</p>
       <h1>Order {order.id.slice(-8)}</h1>
-      {query.error ? <p className="notice error">{query.error}</p> : null}
-      {query.saved ? <p className="notice success">Order updated.</p> : null}
-      <section className="detail-card">
-        <div className="row">
-          <span className="badge">{order.status}</span>
-          <strong>{order.formattedTotal}</strong>
+      {query.error ? (
+        <p className="notice error" role="alert">
+          {query.error}
+        </p>
+      ) : null}
+      {query.saved ? (
+        <p className="notice success" role="status">
+          Order updated successfully.
+        </p>
+      ) : null}
+      <section
+        className="panel order-summary"
+        aria-labelledby="order-status-heading"
+      >
+        <div>
+          <p className="eyebrow" id="order-status-heading">
+            Current status
+          </p>
+          <OrderStatusBadge status={order.status} />
+          <p className="hint">
+            Last updated {formatOrderDate(lastUpdated)} UTC
+          </p>
         </div>
+        <strong className="order-total">{order.formattedTotal}</strong>
+        {targets.length ? (
+          <div className="order-actions">
+            <h2>Available actions</h2>
+            <div className="action-row">
+              {targets.map((target) => (
+                <OrderActionForm
+                  key={target}
+                  orderId={order.id}
+                  target={target}
+                />
+              ))}
+            </div>
+          </div>
+        ) : orderStateMessage(actor.role, order.status) ? (
+          <p className="state-message">
+            {orderStateMessage(actor.role, order.status)}
+          </p>
+        ) : null}
+      </section>
+      <section className="detail-card">
+        <h2>Order items</h2>
         <p>Customer: {order.customer.name}</p>
         <p>Supplier: {order.supplier.name}</p>
         {order.items.map((item) => (
@@ -46,27 +99,6 @@ export default async function OrderPage({
           </div>
         ))}
       </section>
-      {targets.length ? (
-        <section className="panel">
-          <h2>Available actions</h2>
-          <div className="action-row">
-            {targets.map((target) => (
-              <form action={transitionOrderAction} key={target}>
-                <input name="orderId" type="hidden" value={order.id} />
-                <input name="target" type="hidden" value={target} />
-                <button
-                  className={target === "CANCELLED" ? "secondary" : ""}
-                  type="submit"
-                >
-                  {target === "CANCELLED"
-                    ? "Cancel order"
-                    : `Mark ${target.toLowerCase()}`}
-                </button>
-              </form>
-            ))}
-          </div>
-        </section>
-      ) : null}
     </main>
   );
 }

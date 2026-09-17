@@ -122,6 +122,16 @@ same quantity; the integer stock column and nonnegative check remain the final d
 Cross-table role consistency and other application-only relational invariants remain possible defense-in-depth schema
 work for a separately approved migration; this correction does not change the applied schema.
 
+## ADR-020: Role-aware shell and deterministic navigation
+
+Keep one shared authenticated header driven by explicit per-role navigation allow-lists. Shared order URLs remain
+server-scoped by the current database actor, while their labels, counterpart data, empty recovery, and permitted actions
+adapt to the actor's role. Public catalog pages offer a return to the current role home without exposing management
+links from other roles. Critical flows use explicit parent destinations; browser history is never the only exit.
+
+Render order statuses through one readable label and accessible badge mapping. Render actions only from the existing
+domain transition policy, place them above item details, disable repeat submissions, and explain terminal states.
+
 ## ADR-019: Bounded UTC admin aggregates
 
 Define low stock as active products with at most 10 units, excluding archived categories and disabled suppliers. Count

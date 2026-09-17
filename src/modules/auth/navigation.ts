@@ -17,7 +17,7 @@ export const ROLE_NAVIGATION: Record<Role, readonly AuthenticatedNavLink[]> = {
     { href: "/products", label: "Public catalog" },
   ],
   [Role.SUPPLIER]: [
-    { href: "/supplier", label: "Supplier home" },
+    { href: "/supplier", label: "Overview" },
     { href: "/supplier/products", label: "Products" },
     { href: "/orders", label: "Orders" },
     { href: "/products", label: "Public catalog" },
@@ -28,6 +28,18 @@ export const ROLE_NAVIGATION: Record<Role, readonly AuthenticatedNavLink[]> = {
     { href: "/cart", label: "Cart" },
     { href: "/orders", label: "Orders" },
   ],
+};
+
+export const ROLE_WORKSPACE_LABEL: Record<Role, string> = {
+  [Role.ADMIN]: "Admin workspace",
+  [Role.SUPPLIER]: "Supplier workspace",
+  [Role.CUSTOMER]: "Customer account",
+};
+
+export const PUBLIC_WORKSPACE_LABEL: Record<Role, string> = {
+  [Role.ADMIN]: "Admin workspace",
+  [Role.SUPPLIER]: "Supplier workspace",
+  [Role.CUSTOMER]: "Customer workspace",
 };
 
 export function roleHome(role: Role): string {

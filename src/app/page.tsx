@@ -1,30 +1,34 @@
 import Link from "next/link";
+import { PublicNavigation } from "@/components/public-navigation";
+import { getCurrentActor } from "@/modules/auth/authorization";
+import { enabledActorHome } from "@/modules/auth/navigation";
 
-export default function Home() {
+export default async function Home() {
+  const actor = await getCurrentActor();
+  const workspace = enabledActorHome(actor);
+  const navigation = await PublicNavigation({ actor });
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-6">
-      <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
-        Foundation phase
-      </p>
+    <main className="page-shell narrow">
+      {navigation}
+      <p className="eyebrow">Inventory &amp; order management</p>
       <h1 className="mt-3 text-4xl font-semibold tracking-tight">
         Inventory &amp; Order Management System
       </h1>
       <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-        Browse the public catalog or sign in to manage role-specific inventory.
+        {workspace
+          ? "Browse the public catalog or return to your role-specific workspace."
+          : "Browse the public catalog or sign in to manage role-specific inventory."}
       </p>
-      <div className="mt-8 flex gap-3">
-        <Link
-          className="rounded-md bg-slate-900 px-5 py-3 text-white"
-          href="/products"
-        >
+      <div className="action-row">
+        <Link className="button-link" href="/products">
           Browse products
         </Link>
-        <Link
-          className="rounded-md border border-slate-300 px-5 py-3"
-          href="/sign-in"
-        >
-          Sign in
-        </Link>
+        {!workspace ? (
+          <Link className="button-link secondary" href="/sign-in">
+            Sign in
+          </Link>
+        ) : null}
       </div>
     </main>
   );

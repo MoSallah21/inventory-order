@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublicProduct } from "@/modules/catalog/service";
+import { AddToCart } from "@/components/add-to-cart";
+import { PublicNavigation } from "@/components/public-navigation";
 
 type Props = { params: Promise<{ productId: string }> };
 export default async function ProductDetailPage({ params }: Props) {
@@ -9,7 +11,10 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product) notFound();
   return (
     <main className="page-shell narrow">
-      <Link href="/products">← All products</Link>
+      <PublicNavigation />
+      <Link className="back-link" href="/products">
+        ← Back to products
+      </Link>
       <article className="detail-card">
         <div
           aria-label={`${product.name} product image`}
@@ -44,6 +49,11 @@ export default async function ProductDetailPage({ params }: Props) {
             </dd>
           </div>
         </dl>
+        {product.stockQuantity > 0 ? (
+          <AddToCart disabled={false} productId={product.id} />
+        ) : (
+          <p className="stock-unavailable">Out of stock — unavailable to add</p>
+        )}
       </article>
     </main>
   );
