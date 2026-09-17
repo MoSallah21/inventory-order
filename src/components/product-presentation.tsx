@@ -38,14 +38,14 @@ export function ProductPurchaseAction({
   productId: string;
   stockQuantity: number;
 }) {
+  if (capability === "customer") {
+    return <AddToCart productId={productId} stockQuantity={stockQuantity} />;
+  }
+
   if (stockQuantity <= 0) {
     return (
       <p className="stock-unavailable">Out of stock — unavailable to add</p>
     );
-  }
-
-  if (capability === "customer") {
-    return <AddToCart disabled={false} productId={productId} />;
   }
 
   if (capability === "anonymous") {

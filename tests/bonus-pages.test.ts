@@ -15,8 +15,20 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/server", () => ({ connection: vi.fn() }));
 vi.mock("@/components/add-to-cart", () => ({
-  AddToCart: ({ productId }: { productId: string }) =>
-    createElement("button", { "data-product-id": productId }, "Add to cart"),
+  AddToCart: ({
+    productId,
+    stockQuantity,
+  }: {
+    productId: string;
+    stockQuantity: number;
+  }) =>
+    stockQuantity > 0
+      ? createElement("button", { "data-product-id": productId }, "Add to cart")
+      : createElement(
+          "span",
+          { className: "stock-unavailable" },
+          "Out of stock — unavailable to add",
+        ),
 }));
 vi.mock("@/components/public-navigation", () => ({
   PublicNavigation: () => null,

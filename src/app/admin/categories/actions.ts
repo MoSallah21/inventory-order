@@ -9,6 +9,7 @@ import { requireRole } from "@/modules/auth/authorization";
 import {
   archiveCategory,
   createCategory,
+  restoreCategory,
   updateCategory,
 } from "@/modules/catalog/service";
 
@@ -20,10 +21,11 @@ function input(formData: FormData) {
   };
 }
 
-function outcome(error?: unknown) {
+function outcome(error?: unknown, create = false) {
   const query = new URLSearchParams();
   if (error) query.set("error", serializeError(error).message);
   else query.set("saved", "1");
+  if (create && error) query.set("create", "1");
   return `/admin/categories?${query}`;
 }
 
@@ -31,7 +33,7 @@ export async function createCategoryAction(formData: FormData) {
   try {
     await createCategory(await requireRole(Role.ADMIN), input(formData));
   } catch (error) {
-    redirect(outcome(error));
+    redirect(outcome(error, true));
   }
   revalidatePath("/admin/categories");
   revalidatePath("/products");
@@ -56,6 +58,21 @@ export async function updateCategoryAction(formData: FormData) {
 export async function archiveCategoryAction(formData: FormData) {
   try {
     await archiveCategory(
+      await requireRole(Role.ADMIN),
+      String(formData.get("id") ?? ""),
+    );
+  } catch (error) {
+    redirect(outcome(error));
+  }
+  revalidatePath("/admin/categories");
+  revalidatePath("/supplier/products");
+  revalidatePath("/products");
+  redirect(outcome());
+}
+
+export async function restoreCategoryAction(formData: FormData) {
+  try {
+    await restoreCategory(
       await requireRole(Role.ADMIN),
       String(formData.get("id") ?? ""),
     );

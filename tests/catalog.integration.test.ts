@@ -17,6 +17,7 @@ import {
   listPublicProducts,
   listSupplierProducts,
   parseAedPrice,
+  restoreCategory,
   updateCategory,
   updateProduct,
 } from "@/modules/catalog/service";
@@ -437,6 +438,147 @@ describe("catalog PostgreSQL integration", () => {
     const first = await archiveCategory(admin, category.id);
     const second = await archiveCategory(admin, category.id);
     expect(second.archivedAt).toEqual(first.archivedAt);
+  });
+
+  it("restores an archived category without deleting related records", async () => {
+    const category = await createCategory(admin, {
+      name: "Restore Category",
+      slug: `${run}-restore-category`,
+    });
+    categoryIds.push(category.id);
+    await archiveCategory(admin, category.id);
+
+    const restored = await restoreCategory(admin, category.id);
+
+    expect(restored.id).toBe(category.id);
+    expect(restored.archivedAt).toBeNull();
+    await expect(restoreCategory(supplierA, category.id)).rejects.toMatchObject(
+      {
+        code: "FORBIDDEN",
+      },
+    );
+  });
+
+  it("restores only eligible public products and preserves archived, disabled, and historical records", async () => {
+    const category = await createCategory(admin, {
+      name: "Restore Visibility",
+      slug: `${run}-restore-visibility`,
+    });
+    categoryIds.push(category.id);
+    const activeProduct = await createProduct(supplierA, {
+      ...productInput,
+      categoryId: category.id,
+      name: "Restore Visible Product",
+    });
+    productIds.push(activeProduct.id);
+    const archivedProduct = await createProduct(supplierA, {
+      ...productInput,
+      categoryId: category.id,
+      name: "Restore Archived Product",
+    });
+    productIds.push(archivedProduct.id);
+    await archiveProduct(supplierA, archivedProduct.id);
+    const disabledProduct = await prisma.product.create({
+      data: databaseProductData(
+        `${run}-restore-disabled-product`,
+        ids.disabledSupplier,
+        category.id,
+      ),
+    });
+    productIds.push(disabledProduct.id);
+    const countsBefore = await Promise.all([
+      prisma.category.count(),
+      prisma.product.count(),
+      prisma.order.count(),
+      prisma.orderItem.count(),
+    ]);
+
+    await archiveCategory(admin, category.id);
+    let publicIds = (await listPublicProducts()).map((product) => product.id);
+    expect(publicIds).not.toContain(activeProduct.id);
+
+    const first = await restoreCategory(admin, category.id);
+    const second = await restoreCategory(admin, category.id);
+    expect(first.archivedAt).toBeNull();
+    expect(second.archivedAt).toBeNull();
+    publicIds = (await listPublicProducts()).map((product) => product.id);
+    expect(publicIds).toContain(activeProduct.id);
+    expect(publicIds).not.toContain(archivedProduct.id);
+    expect(publicIds).not.toContain(disabledProduct.id);
+    await expect(
+      prisma.product.findUnique({ where: { id: archivedProduct.id } }),
+    ).resolves.toMatchObject({ id: archivedProduct.id });
+    expect(
+      await Promise.all([
+        prisma.category.count(),
+        prisma.product.count(),
+        prisma.order.count(),
+        prisma.orderItem.count(),
+      ]),
+    ).toEqual(countsBefore);
+  });
+
+  it("serializes concurrent production Archive and Restore through the category row lock", async () => {
+    const category = await createCategory(admin, {
+      name: "Concurrent Restore",
+      slug: `${run}-concurrent-restore`,
+    });
+    categoryIds.push(category.id);
+    let release: () => void = () => undefined;
+    let ready: (value: number) => void = () => undefined;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const locked = new Promise<number>((resolve) => {
+      ready = resolve;
+    });
+    const holder = trackOperation(
+      "restore row-lock barrier",
+      prisma.$transaction(async (tx) => {
+        const [{ pid }] = await tx.$queryRaw<Array<{ pid: number }>>`
+          SELECT pg_backend_pid() AS pid
+        `;
+        await lockTestCategory(tx, category.id);
+        ready(pid);
+        await released;
+      }),
+    );
+    let archival:
+      TrackedOperation<Awaited<ReturnType<typeof archiveCategory>>> | undefined;
+    let restoration:
+      TrackedOperation<Awaited<ReturnType<typeof restoreCategory>>> | undefined;
+    try {
+      const holderPid = await locked;
+      archival = trackOperation(
+        "concurrent production archive",
+        archiveCategory(admin, category.id),
+      );
+      await waitForBackendBlockedBy(holderPid, 'FROM "Category"');
+      restoration = trackOperation(
+        "concurrent production restore",
+        restoreCategory(admin, category.id),
+      );
+      release();
+      await holder.promise;
+      await Promise.all([archival.promise, restoration.promise]);
+      const persisted = await prisma.category.findUniqueOrThrow({
+        where: { id: category.id },
+      });
+      expect(
+        persisted.archivedAt === null || persisted.archivedAt instanceof Date,
+      ).toBe(true);
+    } finally {
+      release();
+      await settleOperations([holder, archival, restoration]);
+      await restoreCategory(admin, category.id);
+    }
+
+    await archiveCategory(admin, category.id);
+    const restored = await restoreCategory(admin, category.id);
+    expect(restored.archivedAt).toBeNull();
+    await expect(
+      prisma.category.findUnique({ where: { id: category.id } }),
+    ).resolves.toMatchObject({ id: category.id, archivedAt: null });
   });
 
   it("makes a product create wait for archival and then reject the archived category", async () => {

@@ -1,4 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import {
+  CART_UPDATED_EVENT,
+  cartFeedback,
+  nextCartQuantity,
+  readCart,
+  saveCart,
+} from "@/components/add-to-cart";
 
 import {
   checkoutPayload,
@@ -50,5 +58,50 @@ describe("cart totals", () => {
     expect(suppressCheckoutSubmission(true, "request_key_123456")).toBe(true);
     expect(suppressCheckoutSubmission(false, "")).toBe(true);
     expect(suppressCheckoutSubmission(false, "request_key_123456")).toBe(false);
+  });
+});
+
+describe("product cart feedback", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("presents zero, repeated, and maximum-stock quantities explicitly", () => {
+    expect(cartFeedback(0, 3)).toMatchObject({
+      atMaximum: false,
+      buttonLabel: "Add to cart",
+      quantity: 0,
+      status: "",
+    });
+    expect(cartFeedback(1, 3)).toMatchObject({
+      atMaximum: false,
+      buttonLabel: "Add another",
+      status: "In cart: 1",
+    });
+    expect(cartFeedback(3, 3)).toMatchObject({
+      atMaximum: true,
+      status: "In cart: 3 · Maximum available",
+    });
+  });
+
+  it("never increments beyond available stock", () => {
+    expect(nextCartQuantity(0, 3)).toBe(1);
+    expect(nextCartQuantity(1, 3)).toBe(2);
+    expect(nextCartQuantity(3, 3)).toBe(3);
+  });
+
+  it("reads persisted quantities and emits the same-tab synchronization event", () => {
+    const storage = new Map<string, string>();
+    const target = new EventTarget();
+    const listener = vi.fn();
+    target.addEventListener(CART_UPDATED_EVENT, listener);
+    vi.stubGlobal("window", target);
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    });
+
+    saveCart({ product: 2 });
+
+    expect(readCart()).toEqual({ product: 2 });
+    expect(listener).toHaveBeenCalledOnce();
   });
 });

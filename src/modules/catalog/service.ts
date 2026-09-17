@@ -390,6 +390,24 @@ export async function archiveCategory(actor: Actor, id: string) {
   }
 }
 
+export async function restoreCategory(actor: Actor, id: string) {
+  requireActorRole(actor, Role.ADMIN);
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const locked = await lockCategoryForUpdate(tx, id);
+      if (!locked.archivedAt) {
+        return tx.category.findUniqueOrThrow({ where: { id } });
+      }
+      return tx.category.update({
+        where: { id },
+        data: { archivedAt: null },
+      });
+    });
+  } catch (error) {
+    mapDatabaseError(error);
+  }
+}
+
 export async function listSupplierProducts(actor: Actor) {
   const supplier = requireActorRole(actor, Role.SUPPLIER);
   return prisma.product.findMany({
